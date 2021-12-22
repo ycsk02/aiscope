@@ -1,20 +1,31 @@
 package apiserver
 
 import (
+	"aiscope/pkg/aiapis/version"
+	apiserverconfig "aiscope/pkg/apiserver/config"
+	"aiscope/pkg/apiserver/filters"
+	"aiscope/pkg/apiserver/request"
+	"aiscope/pkg/simple/client/k8s"
 	"context"
 	"github.com/emicklei/go-restful"
+	urlruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog/v2"
 	"net/http"
 )
 
 type APIServer struct {
-	// number of kubesphere apiserver
 	ServerCount int
 
 	Server *http.Server
 
+	Config *apiserverconfig.Config
+
 	// webservice container, where all webservice defines
 	container *restful.Container
+
+	KubernetesClient k8s.Client
 }
 
 func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
@@ -28,7 +39,15 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 
 	s.Server.Handler = s.container
 
+	s.installAIscopeAPIs()
+
+	s.buildHandlerChain(stopCh)
+
 	return nil
+}
+
+func (s *APIServer) installAIscopeAPIs() {
+	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
 }
 
 func (s *APIServer) Run(ctx context.Context) (err error) {
@@ -49,5 +68,25 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 	}
 
 	return err
+}
+
+func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
+	requestInfoResolver := &request.RequestInfoFactory{
+		APIPrefixes:          sets.NewString("api", "apis"),
+	}
+
+	handler := s.Server.Handler
+	handler = filters.WithKubeAPIServer(handler, s.KubernetesClient.Config(), &errorResponder{})
+
+	handler = filters.WithRequestInfo(handler, requestInfoResolver)
+
+	s.Server.Handler = handler
+}
+
+type errorResponder struct{}
+
+func (e *errorResponder) Error(w http.ResponseWriter, req *http.Request, err error) {
+	klog.Error(err)
+	responsewriters.InternalError(w, req, err)
 }
 
