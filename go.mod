@@ -10,6 +10,10 @@ require (
 )
 
 require (
+	github.com/go-logr/logr v1.2.0
+	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/gomega v1.17.0
+	k8s.io/api v0.23.0
 	k8s.io/apiextensions-apiserver v0.23.0
 	k8s.io/apimachinery v0.23.0
 	k8s.io/apiserver v0.23.0
@@ -21,4 +25,5 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.5
 	k8s.io/apiserver => k8s.io/apiserver v0.22.5
 	k8s.io/client-go => k8s.io/client-go v0.22.5
+	k8s.io/component-base => k8s.io/component-base v0.22.5
 )
