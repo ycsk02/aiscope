@@ -17,7 +17,7 @@ limitations under the License.
 package workspace
 
 import (
-	tenantv1alpha2 "aiscope/pkg/api/tenant/v1alpha2"
+	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
 	"aiscope/pkg/utils/k8sutil"
 	"aiscope/pkg/utils/sliceutil"
 	"context"

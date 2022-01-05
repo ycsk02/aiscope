@@ -1,5 +1,5 @@
 /*
-Copyright 2021.
+Copyright 2022.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package v1alpha2 contains API Schema definitions for the tenant v1alpha2 API group
 //+kubebuilder:object:generate=true
-//+groupName=tenant.aiscope.io
+//+groupName=tenant.aiscope
 package v1alpha2
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "tenant.aiscope.io", Version: "v1alpha2"}
+	GroupVersion = schema.GroupVersion{Group: "tenant.aiscope", Version: "v1alpha2"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

@@ -1,5 +1,5 @@
 /*
-Copyright 2021.
+Copyright 2022.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,8 +45,14 @@ type WorkspaceStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// Workspace is the Schema for the workspaces API
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Manager",type="string",JSONPath=".spec.manager"
+// +kubebuilder:printcolumn:name="NetworkIsolation",type="boolean",JSONPath=".spec.networkIsolation"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:categories="tenant",scope="Cluster"
+
+// Workspace is the Schema for the workspaces API
 type Workspace struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

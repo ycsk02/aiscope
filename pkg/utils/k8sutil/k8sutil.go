@@ -1,7 +1,7 @@
 package k8sutil
 
 import (
-	tenantv1alpha2 "aiscope/pkg/api/tenant/v1alpha2"
+	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
