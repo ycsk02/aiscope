@@ -37,7 +37,7 @@ const (
 	kubeconfigFileName   = "config"
 	configMapKind        = "ConfigMap"
 	configMapAPIVersion  = "v1"
-	privateKeyAnnotation = "kubesphere.io/private-key"
+	privateKeyAnnotation = "aiscope.io/private-key"
 	residual             = 72 * time.Hour
 )
 

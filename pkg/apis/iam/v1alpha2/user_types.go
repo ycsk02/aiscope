@@ -23,6 +23,11 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const (
+	LastPasswordChangeTimeAnnotation      = "iam.aiscope.io/last-password-change-time"
+	IdentifyProviderLabel                 = "iam.aiscope.io/identify-provider"
+)
+
 // UserSpec defines the desired state of User
 type UserSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
