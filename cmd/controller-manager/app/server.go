@@ -4,7 +4,10 @@ import (
 	"aiscope/cmd/controller-manager/app/options"
 	"aiscope/pkg/apis"
 	"aiscope/pkg/controller/namespace"
+	"aiscope/pkg/controller/user"
 	"aiscope/pkg/controller/workspace"
+	"aiscope/pkg/informers"
+	"aiscope/pkg/models/kubeconfig"
 	"aiscope/pkg/simple/client/k8s"
 	"context"
 	"github.com/spf13/cobra"
@@ -42,6 +45,9 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 		klog.Errorf("Failed to create kubernetes clientset %v", err)
 		return err
 	}
+
+	informerFactory := informers.NewInformerFactories(
+		kubernetesClient.Kubernetes())
 
 	mgrOptions := manager.Options{
 		Port: 8443,
@@ -83,6 +89,21 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 	if err = namespaeReconciler.SetupWithManager(mgr); err != nil {
 		klog.Fatalf("Unable to create namespace controller: %v", err)
 	}
+
+	kubeconfigClient := kubeconfig.NewOperator(kubernetesClient.Kubernetes(),
+		informerFactory.KubernetesSharedInformerFactory().Core().V1().ConfigMaps().Lister(),
+		kubernetesClient.Config())
+	userController := user.Reconciler{
+		MaxConcurrentReconciles: 4,
+		KubeconfigClient:        kubeconfigClient,
+	}
+	if err = userController.SetupWithManager(mgr); err != nil {
+		klog.Fatalf("Unable to create user controller: %v", err)
+	}
+
+	// Start cache data after all informer is registered
+	klog.V(0).Info("Starting cache resource from apiserver...")
+	informerFactory.Start(ctx.Done())
 
 	klog.V(0).Info("Starting the controllers.")
 	if err = mgr.Start(ctx); err != nil {

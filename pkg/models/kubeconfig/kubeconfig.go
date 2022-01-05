@@ -56,7 +56,7 @@ func NewOperator(k8sClient kubernetes.Interface, configMapLister corev1listers.C
 	return &operator{k8sClient: k8sClient, configMapLister: configMapLister, config: config}
 }
 
-// CreateKubeConfig Create kubeconfig configmap in KubeSphereControlNamespace for the specified user
+// CreateKubeConfig Create kubeconfig configmap in AiscopeControlNamespace for the specified user
 func (o *operator) CreateKubeConfig(user *iamv1alpha2.User) error {
 	configName := fmt.Sprintf(kubeconfigNameFormat, user.Name)
 	cm, err := o.configMapLister.ConfigMaps(constants.AIScopeControlNamespace).Get(configName)
