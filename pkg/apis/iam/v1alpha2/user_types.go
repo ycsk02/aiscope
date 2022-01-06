@@ -24,6 +24,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
+	ResourceKindUser                      = "User"
 	LastPasswordChangeTimeAnnotation      = "iam.aiscope.io/last-password-change-time"
 	IdentifyProviderLabel                 = "iam.aiscope.io/identify-provider"
 )

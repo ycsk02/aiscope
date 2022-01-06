@@ -19,10 +19,10 @@ package user
 import (
 	"aiscope/pkg/models/kubeconfig"
 	"aiscope/pkg/utils/sliceutil"
-	"golang.org/x/crypto/bcrypt"
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
+	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -112,6 +112,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Recorder.Event(user, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return ctrl.Result{}, err
 	}
+
 	if err = r.syncUserStatus(ctx, user); err != nil {
 		klog.Error(err)
 		r.Recorder.Event(user, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))

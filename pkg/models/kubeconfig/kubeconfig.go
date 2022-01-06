@@ -43,6 +43,7 @@ const (
 
 type Interface interface {
 	CreateKubeConfig(user *iamv1alpha2.User) error
+	UpdateKubeconfig(username string, csr *certificatesv1.CertificateSigningRequest) error
 }
 
 type operator struct {
@@ -237,3 +238,58 @@ func isExpired(cm *corev1.ConfigMap, username string) bool {
 	return false
 }
 
+// UpdateKubeconfig Update client key and client certificate after CertificateSigningRequest has been approved
+func (o *operator) UpdateKubeconfig(username string, csr *certificatesv1.CertificateSigningRequest) error {
+	configName := fmt.Sprintf(kubeconfigNameFormat, username)
+	configMap, err := o.k8sClient.CoreV1().ConfigMaps(constants.AIScopeControlNamespace).Get(context.Background(), configName, metav1.GetOptions{})
+	if err != nil {
+		klog.Errorln(err)
+		return err
+	}
+
+	configMap = applyCert(configMap, csr)
+	_, err = o.k8sClient.CoreV1().ConfigMaps(constants.AIScopeControlNamespace).Update(context.Background(), configMap, metav1.UpdateOptions{})
+	if err != nil {
+		klog.Errorln(err)
+		return err
+	}
+	return nil
+}
+
+
+func applyCert(cm *corev1.ConfigMap, csr *certificatesv1.CertificateSigningRequest) *corev1.ConfigMap {
+	data := []byte(cm.Data[kubeconfigFileName])
+	kubeconfig, err := clientcmd.Load(data)
+	if err != nil {
+		klog.Error(err)
+		return cm
+	}
+
+	username := getControlledUsername(cm)
+	privateKey := csr.Annotations[privateKeyAnnotation]
+	clientCert := csr.Status.Certificate
+	kubeconfig.AuthInfos = map[string]*clientcmdapi.AuthInfo{
+		username: {
+			ClientKeyData:         []byte(privateKey),
+			ClientCertificateData: clientCert,
+		},
+	}
+
+	data, err = clientcmd.Write(*kubeconfig)
+	if err != nil {
+		klog.Error(err)
+		return cm
+	}
+
+	cm.Data[kubeconfigFileName] = string(data)
+	return cm
+}
+
+func getControlledUsername(cm *corev1.ConfigMap) string {
+	for _, ownerReference := range cm.OwnerReferences {
+		if ownerReference.Kind == iamv1alpha2.ResourceKindUser {
+			return ownerReference.Name
+		}
+	}
+	return ""
+}

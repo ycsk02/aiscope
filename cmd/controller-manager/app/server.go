@@ -101,6 +101,13 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 		klog.Fatalf("Unable to create user controller: %v", err)
 	}
 
+	if err = addControllers(mgr,
+		kubernetesClient,
+		informerFactory,
+		ctx.Done()); err != nil {
+		klog.Fatalf("unable to register controllers to the manager: %v", err)
+	}
+
 	// Start cache data after all informer is registered
 	klog.V(0).Info("Starting cache resource from apiserver...")
 	informerFactory.Start(ctx.Done())
