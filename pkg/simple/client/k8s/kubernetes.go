@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	aiscope "aiscope/pkg/client/clientset/versioned"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
@@ -10,6 +11,7 @@ import (
 
 type Client interface {
 	Kubernetes() kubernetes.Interface
+	AIScope() aiscope.Interface
 	ApiExtensions() apiextensionsclient.Interface
 	Discovery() discovery.DiscoveryInterface
 	Master() string
@@ -19,6 +21,8 @@ type Client interface {
 type kubernetesClient struct {
 	// kubernetes client interface
 	k8s kubernetes.Interface
+
+	ai aiscope.Interface
 
 	// discovery client
 	discoveryClient *discovery.DiscoveryClient
@@ -54,6 +58,11 @@ func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
 	k.master = options.Master
 	k.config = config
 
+	k.ai, err = aiscope.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &k, nil
 }
 
@@ -77,4 +86,8 @@ func (k *kubernetesClient) Master() string {
 
 func (k *kubernetesClient) Config() *rest.Config {
 	return k.config
+}
+
+func (k *kubernetesClient) AIScope() aiscope.Interface {
+	return k.ai
 }

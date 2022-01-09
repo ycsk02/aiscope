@@ -37,8 +37,8 @@ type IamV1alpha2Client struct {
 	restClient rest.Interface
 }
 
-func (c *IamV1alpha2Client) Users(namespace string) UserInterface {
-	return newUsers(c, namespace)
+func (c *IamV1alpha2Client) Users() UserInterface {
+	return newUsers(c)
 }
 
 // NewForConfig creates a new IamV1alpha2Client for the given config.

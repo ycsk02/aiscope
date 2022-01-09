@@ -34,8 +34,9 @@ type WorkspaceLister interface {
 	// List lists all Workspaces in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha2.Workspace, err error)
-	// Workspaces returns an object that can list and get Workspaces.
-	Workspaces(namespace string) WorkspaceNamespaceLister
+	// Get retrieves the Workspace from the index for a given name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha2.Workspace, error)
 	WorkspaceListerExpansion
 }
 
@@ -57,41 +58,9 @@ func (s *workspaceLister) List(selector labels.Selector) (ret []*v1alpha2.Worksp
 	return ret, err
 }
 
-// Workspaces returns an object that can list and get Workspaces.
-func (s *workspaceLister) Workspaces(namespace string) WorkspaceNamespaceLister {
-	return workspaceNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// WorkspaceNamespaceLister helps list and get Workspaces.
-// All objects returned here must be treated as read-only.
-type WorkspaceNamespaceLister interface {
-	// List lists all Workspaces in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.Workspace, err error)
-	// Get retrieves the Workspace from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha2.Workspace, error)
-	WorkspaceNamespaceListerExpansion
-}
-
-// workspaceNamespaceLister implements the WorkspaceNamespaceLister
-// interface.
-type workspaceNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Workspaces in the indexer for a given namespace.
-func (s workspaceNamespaceLister) List(selector labels.Selector) (ret []*v1alpha2.Workspace, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.Workspace))
-	})
-	return ret, err
-}
-
-// Get retrieves the Workspace from the indexer for a given namespace and name.
-func (s workspaceNamespaceLister) Get(name string) (*v1alpha2.Workspace, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+// Get retrieves the Workspace from the index for a given name.
+func (s *workspaceLister) Get(name string) (*v1alpha2.Workspace, error) {
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}

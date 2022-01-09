@@ -35,7 +35,6 @@ import (
 // FakeWorkspaces implements WorkspaceInterface
 type FakeWorkspaces struct {
 	Fake *FakeTenantV1alpha2
-	ns   string
 }
 
 var workspacesResource = schema.GroupVersionResource{Group: "tenant", Version: "v1alpha2", Resource: "workspaces"}
@@ -45,8 +44,7 @@ var workspacesKind = schema.GroupVersionKind{Group: "tenant", Version: "v1alpha2
 // Get takes name of the workspace, and returns the corresponding workspace object, and an error if there is any.
 func (c *FakeWorkspaces) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha2.Workspace, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(workspacesResource, c.ns, name), &v1alpha2.Workspace{})
-
+		Invokes(testing.NewRootGetAction(workspacesResource, name), &v1alpha2.Workspace{})
 	if obj == nil {
 		return nil, err
 	}
@@ -56,8 +54,7 @@ func (c *FakeWorkspaces) Get(ctx context.Context, name string, options v1.GetOpt
 // List takes label and field selectors, and returns the list of Workspaces that match those selectors.
 func (c *FakeWorkspaces) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha2.WorkspaceList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(workspacesResource, workspacesKind, c.ns, opts), &v1alpha2.WorkspaceList{})
-
+		Invokes(testing.NewRootListAction(workspacesResource, workspacesKind, opts), &v1alpha2.WorkspaceList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -78,15 +75,13 @@ func (c *FakeWorkspaces) List(ctx context.Context, opts v1.ListOptions) (result 
 // Watch returns a watch.Interface that watches the requested workspaces.
 func (c *FakeWorkspaces) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(workspacesResource, c.ns, opts))
-
+		InvokesWatch(testing.NewRootWatchAction(workspacesResource, opts))
 }
 
 // Create takes the representation of a workspace and creates it.  Returns the server's representation of the workspace, and an error, if there is any.
 func (c *FakeWorkspaces) Create(ctx context.Context, workspace *v1alpha2.Workspace, opts v1.CreateOptions) (result *v1alpha2.Workspace, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(workspacesResource, c.ns, workspace), &v1alpha2.Workspace{})
-
+		Invokes(testing.NewRootCreateAction(workspacesResource, workspace), &v1alpha2.Workspace{})
 	if obj == nil {
 		return nil, err
 	}
@@ -96,8 +91,7 @@ func (c *FakeWorkspaces) Create(ctx context.Context, workspace *v1alpha2.Workspa
 // Update takes the representation of a workspace and updates it. Returns the server's representation of the workspace, and an error, if there is any.
 func (c *FakeWorkspaces) Update(ctx context.Context, workspace *v1alpha2.Workspace, opts v1.UpdateOptions) (result *v1alpha2.Workspace, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(workspacesResource, c.ns, workspace), &v1alpha2.Workspace{})
-
+		Invokes(testing.NewRootUpdateAction(workspacesResource, workspace), &v1alpha2.Workspace{})
 	if obj == nil {
 		return nil, err
 	}
@@ -108,8 +102,7 @@ func (c *FakeWorkspaces) Update(ctx context.Context, workspace *v1alpha2.Workspa
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeWorkspaces) UpdateStatus(ctx context.Context, workspace *v1alpha2.Workspace, opts v1.UpdateOptions) (*v1alpha2.Workspace, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(workspacesResource, "status", c.ns, workspace), &v1alpha2.Workspace{})
-
+		Invokes(testing.NewRootUpdateSubresourceAction(workspacesResource, "status", workspace), &v1alpha2.Workspace{})
 	if obj == nil {
 		return nil, err
 	}
@@ -119,14 +112,13 @@ func (c *FakeWorkspaces) UpdateStatus(ctx context.Context, workspace *v1alpha2.W
 // Delete takes name of the workspace and deletes it. Returns an error if one occurs.
 func (c *FakeWorkspaces) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(workspacesResource, c.ns, name), &v1alpha2.Workspace{})
-
+		Invokes(testing.NewRootDeleteAction(workspacesResource, name), &v1alpha2.Workspace{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeWorkspaces) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(workspacesResource, c.ns, listOpts)
+	action := testing.NewRootDeleteCollectionAction(workspacesResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha2.WorkspaceList{})
 	return err
@@ -135,8 +127,7 @@ func (c *FakeWorkspaces) DeleteCollection(ctx context.Context, opts v1.DeleteOpt
 // Patch applies the patch and returns the patched workspace.
 func (c *FakeWorkspaces) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.Workspace, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(workspacesResource, c.ns, name, pt, data, subresources...), &v1alpha2.Workspace{})
-
+		Invokes(testing.NewRootPatchSubresourceAction(workspacesResource, name, pt, data, subresources...), &v1alpha2.Workspace{})
 	if obj == nil {
 		return nil, err
 	}

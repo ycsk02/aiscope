@@ -23,7 +23,3 @@ package v1alpha2
 // WorkspaceListerExpansion allows custom methods to be added to
 // WorkspaceLister.
 type WorkspaceListerExpansion interface{}
-
-// WorkspaceNamespaceListerExpansion allows custom methods to be added to
-// WorkspaceNamespaceLister.
-type WorkspaceNamespaceListerExpansion interface{}

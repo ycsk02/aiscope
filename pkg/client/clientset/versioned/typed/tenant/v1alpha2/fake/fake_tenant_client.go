@@ -31,8 +31,8 @@ type FakeTenantV1alpha2 struct {
 	*testing.Fake
 }
 
-func (c *FakeTenantV1alpha2) Workspaces(namespace string) v1alpha2.WorkspaceInterface {
-	return &FakeWorkspaces{c, namespace}
+func (c *FakeTenantV1alpha2) Workspaces() v1alpha2.WorkspaceInterface {
+	return &FakeWorkspaces{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

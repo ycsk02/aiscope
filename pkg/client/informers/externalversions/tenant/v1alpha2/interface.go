@@ -43,5 +43,5 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 
 // Workspaces returns a WorkspaceInformer.
 func (v *version) Workspaces() WorkspaceInformer {
-	return &workspaceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &workspaceInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

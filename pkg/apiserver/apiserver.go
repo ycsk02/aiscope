@@ -1,10 +1,12 @@
 package apiserver
 
 import (
+	iamapi "aiscope/pkg/aiapis/iam/v1alpha2"
 	"aiscope/pkg/aiapis/version"
 	apiserverconfig "aiscope/pkg/apiserver/config"
 	"aiscope/pkg/apiserver/filters"
 	"aiscope/pkg/apiserver/request"
+	"aiscope/pkg/models/iam/im"
 	"aiscope/pkg/simple/client/k8s"
 	"context"
 	"github.com/emicklei/go-restful"
@@ -47,7 +49,11 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 }
 
 func (s *APIServer) installAIscopeAPIs() {
+	imOperator := im.NewOperator(s.KubernetesClient.AIScope())
+
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
+
+	urlruntime.Must(iamapi.AddToContainer(s.container, imOperator))
 }
 
 func (s *APIServer) Run(ctx context.Context) (err error) {

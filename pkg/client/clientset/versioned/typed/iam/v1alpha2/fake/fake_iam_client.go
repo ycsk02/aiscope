@@ -31,8 +31,8 @@ type FakeIamV1alpha2 struct {
 	*testing.Fake
 }
 
-func (c *FakeIamV1alpha2) Users(namespace string) v1alpha2.UserInterface {
-	return &FakeUsers{c, namespace}
+func (c *FakeIamV1alpha2) Users() v1alpha2.UserInterface {
+	return &FakeUsers{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

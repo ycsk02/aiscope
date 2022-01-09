@@ -37,8 +37,8 @@ type TenantV1alpha2Client struct {
 	restClient rest.Interface
 }
 
-func (c *TenantV1alpha2Client) Workspaces(namespace string) WorkspaceInterface {
-	return newWorkspaces(c, namespace)
+func (c *TenantV1alpha2Client) Workspaces() WorkspaceInterface {
+	return newWorkspaces(c)
 }
 
 // NewForConfig creates a new TenantV1alpha2Client for the given config.

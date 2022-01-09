@@ -34,8 +34,9 @@ type UserLister interface {
 	// List lists all Users in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha2.User, err error)
-	// Users returns an object that can list and get Users.
-	Users(namespace string) UserNamespaceLister
+	// Get retrieves the User from the index for a given name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha2.User, error)
 	UserListerExpansion
 }
 
@@ -57,41 +58,9 @@ func (s *userLister) List(selector labels.Selector) (ret []*v1alpha2.User, err e
 	return ret, err
 }
 
-// Users returns an object that can list and get Users.
-func (s *userLister) Users(namespace string) UserNamespaceLister {
-	return userNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// UserNamespaceLister helps list and get Users.
-// All objects returned here must be treated as read-only.
-type UserNamespaceLister interface {
-	// List lists all Users in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.User, err error)
-	// Get retrieves the User from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha2.User, error)
-	UserNamespaceListerExpansion
-}
-
-// userNamespaceLister implements the UserNamespaceLister
-// interface.
-type userNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Users in the indexer for a given namespace.
-func (s userNamespaceLister) List(selector labels.Selector) (ret []*v1alpha2.User, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.User))
-	})
-	return ret, err
-}
-
-// Get retrieves the User from the indexer for a given namespace and name.
-func (s userNamespaceLister) Get(name string) (*v1alpha2.User, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+// Get retrieves the User from the index for a given name.
+func (s *userLister) Get(name string) (*v1alpha2.User, error) {
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}
