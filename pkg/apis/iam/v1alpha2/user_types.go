@@ -78,8 +78,10 @@ type UserStatus struct {
 	LastLoginTime *metav1.Time `json:"lastLoginTime,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // User is the Schema for the users API
 // +kubebuilder:printcolumn:name="Email",type="string",JSONPath=".spec.email"
