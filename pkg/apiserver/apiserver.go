@@ -15,6 +15,7 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog/v2"
 	"net/http"
+	tenantapi "aiscope/pkg/aiapis/tenant/v1alpha2"
 )
 
 type APIServer struct {
@@ -54,6 +55,8 @@ func (s *APIServer) installAIscopeAPIs() {
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))
 
 	urlruntime.Must(iamapi.AddToContainer(s.container, imOperator))
+
+	urlruntime.Must(tenantapi.AddToContainer(s.container, s.KubernetesClient.AIScope()))
 }
 
 func (s *APIServer) Run(ctx context.Context) (err error) {

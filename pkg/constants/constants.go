@@ -7,4 +7,6 @@ const (
 
 	UserTag           = "User"
 	GroupTag          = "Group"
+
+	WorkspaceTag     = "Workspace"
 )

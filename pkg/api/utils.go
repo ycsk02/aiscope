@@ -34,3 +34,7 @@ func handle(statusCode int, response *restful.Response, req *restful.Request, er
 	klog.Errorf("%s:%d %v", fn, line, err)
 	http.Error(response, sanitizer.Replace(err.Error()), statusCode)
 }
+
+func HandleNotFound(response *restful.Response, req *restful.Request, err error) {
+	handle(http.StatusNotFound, response, req, err)
+}
