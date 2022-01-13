@@ -38,3 +38,11 @@ func handle(statusCode int, response *restful.Response, req *restful.Request, er
 func HandleNotFound(response *restful.Response, req *restful.Request, err error) {
 	handle(http.StatusNotFound, response, req, err)
 }
+
+func HandleForbidden(response *restful.Response, req *restful.Request, err error) {
+	handle(http.StatusForbidden, response, req, err)
+}
+
+func HandleInternalError(response *restful.Response, req *restful.Request, err error) {
+	handle(http.StatusInternalServerError, response, req, err)
+}

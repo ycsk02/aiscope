@@ -9,4 +9,5 @@ const (
 	GroupTag          = "Group"
 
 	WorkspaceTag     = "Workspace"
+	NamespaceTag     = "Namespace"
 )

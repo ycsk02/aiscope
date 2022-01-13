@@ -8,3 +8,8 @@ const (
 const (
 	StatusOK = "ok"
 )
+
+type ListResult struct {
+	Items      []interface{} `json:"items"`
+	TotalItems int           `json:"totalItems"`
+}

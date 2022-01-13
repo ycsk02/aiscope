@@ -11,6 +11,13 @@ import (
 	"strings"
 )
 
+const (
+	GlobalScope             = "Global"
+	ClusterScope            = "Cluster"
+	WorkspaceScope          = "Workspace"
+	NamespaceScope          = "Namespace"
+)
+
 type RequestInfoResolver interface {
 	NewRequestInfo(req *http.Request) (*RequestInfo, error)
 }
