@@ -31,7 +31,9 @@ import (
 	"time"
 
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
+	ldapclient "aiscope/pkg/simple/client/ldap"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilwait "k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -53,6 +55,7 @@ const (
 type Reconciler struct {
 	client.Client
 	Scheme                  *runtime.Scheme
+	LdapClient              ldapclient.Interface
 	KubeconfigClient        kubeconfig.Interface
 	Logger                  logr.Logger
 	Recorder                record.EventRecorder
@@ -90,7 +93,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	} else {
 		if sliceutil.HasString(user.ObjectMeta.Finalizers, finalizer) {
-			// TODO DELETE ALL resources of user
+			// we do not need to delete the user from ldapServer when ldapClient is nil
+			if r.LdapClient != nil {
+				if err = r.waitForDeleteFromLDAP(user.Name); err != nil {
+					// ignore timeout error
+					r.Recorder.Event(user, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
+				}
+			}
 
 			// remove our finalizer from the list and update it.
 			user.Finalizers = sliceutil.RemoveString(user.ObjectMeta.Finalizers, func(item string) bool {
@@ -105,6 +114,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		return ctrl.Result{}, err
+	}
+
+	// we do not need to sync ldap info when ldapClient is nil
+	if r.LdapClient != nil {
+		// ignore errors if timeout
+		if err = r.waitForSyncToLDAP(user); err != nil {
+			// ignore timeout error
+			r.Recorder.Event(user, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
+		}
 	}
 
 	if err = r.encryptPassword(ctx, user); err != nil {
@@ -131,6 +149,46 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	r.Recorder.Event(user, corev1.EventTypeNormal, successSynced, messageResourceSynced)
 
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) waitForSyncToLDAP(user *iamv1alpha2.User) error {
+	if isEncrypted(user.Spec.EncryptedPassword) {
+		return nil
+	}
+	err := utilwait.PollImmediate(interval, timeout, func() (done bool, err error) {
+		_, err = r.LdapClient.Get(user.Name)
+		if err != nil {
+			if err == ldapclient.ErrUserNotExists {
+				err = r.LdapClient.Create(user)
+				if err != nil {
+					klog.Error(err)
+					return false, err
+				}
+				return true, nil
+			}
+			klog.Error(err)
+			return false, err
+		}
+		err = r.LdapClient.Update(user)
+		if err != nil {
+			klog.Error(err)
+			return false, err
+		}
+		return true, nil
+	})
+	return err
+}
+
+func (r *Reconciler) waitForDeleteFromLDAP(username string) error {
+	err := utilwait.PollImmediate(interval, timeout, func() (done bool, err error) {
+		err = r.LdapClient.Delete(username)
+		if err != nil && err != ldapclient.ErrUserNotExists {
+			klog.Error(err)
+			return false, err
+		}
+		return true, nil
+	})
+	return err
 }
 
 // encryptPassword Encrypt and update the user password

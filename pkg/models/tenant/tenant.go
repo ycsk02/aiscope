@@ -4,18 +4,13 @@ import (
 	"aiscope/pkg/api"
 	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
 	"aiscope/pkg/apiserver/query"
-	"aiscope/pkg/apiserver/request"
 	aiscope "aiscope/pkg/client/clientset/versioned"
-	resources "aiscope/pkg/models/resources/v1alpha2"
 	resourcev1alpha2 "aiscope/pkg/models/resources/v1alpha2/resource"
 	"context"
-	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/authentication/user"
-	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )
@@ -58,68 +53,16 @@ func labelNamespaceWithWorkspaceName(namespace *corev1.Namespace, workspaceName 
 }
 
 func (t *tenantOperator) ListNamespaces(user user.Info, workspace string, queryParam *query.Query) (*api.ListResult, error) {
-	nsScope := request.ClusterScope
-	if workspace != "" {
-		nsScope = request.WorkspaceScope
-		// filter by workspace
-		queryParam.Filters[query.FieldLabel] = query.Value(fmt.Sprintf("%s=%s", tenantv1alpha2.WorkspaceLabel, workspace))
-	}
-
-	listNS := authorizer.AttributesRecord{
-		User:            user,
-		Verb:            "list",
-		Workspace:       workspace,
-		Resource:        "namespaces",
-		ResourceRequest: true,
-		ResourceScope:   nsScope,
-	}
-
-	decision, _, err := t.authorizer.Authorize(listNS)
-	if err != nil {
-		klog.Error(err)
-		return nil, err
-	}
-
 	// allowed to list all namespaces in the specified scope
-	if decision == authorizer.DecisionAllow {
+	// if decision == authorizer.DecisionAllow {
 		result, err := t.resourceGetter.List("namespaces", "", queryParam)
 		if err != nil {
 			klog.Error(err)
 			return nil, err
 		}
 		return result, nil
-	}
+	// }
 
-	// retrieving associated resources through role binding
-	roleBindings, err := t.am.ListRoleBindings(user.GetName(), user.GetGroups(), "")
-	if err != nil {
-		klog.Error(err)
-		return nil, err
-	}
-
-	namespaces := make([]runtime.Object, 0)
-	for _, roleBinding := range roleBindings {
-		obj, err := t.resourceGetter.Get("namespaces", "", roleBinding.Namespace)
-		if err != nil {
-			klog.Error(err)
-			return nil, err
-		}
-		namespace := obj.(*corev1.Namespace)
-		// label matching selector, remove duplicate entity
-		if queryParam.Selector().Matches(labels.Set(namespace.Labels)) &&
-			!contains(namespaces, namespace) {
-			namespaces = append(namespaces, namespace)
-		}
-	}
-
-	// use default pagination search logic
-	result := resources.DefaultList(namespaces, queryParam, func(left runtime.Object, right runtime.Object, field query.Field) bool {
-		return resources.DefaultObjectMetaCompare(left.(*corev1.Namespace).ObjectMeta, right.(*corev1.Namespace).ObjectMeta, field)
-	}, func(object runtime.Object, filter query.Filter) bool {
-		return resources.DefaultObjectMetaFilter(object.(*corev1.Namespace).ObjectMeta, filter)
-	})
-
-	return result, nil
 }
 
 func contains(objects []runtime.Object, object runtime.Object) bool {

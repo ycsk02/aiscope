@@ -1,0 +1,11 @@
+dn: cn=admins,ou=groups,dc=aiscope,dc=io
+objectClass: groupOfNames
+cn: admins
+member: cn=admin1,ou=people,dc=aiscope,dc=io
+member: cn=admin2,ou=people,dc=aiscope,dc=io
+
+dn: cn=developers,ou=groups,dc=aiscope,dc=io
+objectClass: groupOfNames
+cn: developers
+member: cn=developer1,ou=people,dc=aiscope,dc=io
+member: cn=developer2,ou=people,dc=aiscope,dc=io

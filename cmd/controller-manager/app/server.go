@@ -9,7 +9,9 @@ import (
 	"aiscope/pkg/informers"
 	"aiscope/pkg/models/kubeconfig"
 	"aiscope/pkg/simple/client/k8s"
+	ldapclient "aiscope/pkg/simple/client/ldap"
 	"context"
+	"fmt"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
@@ -44,6 +46,21 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 	if err != nil {
 		klog.Errorf("Failed to create kubernetes clientset %v", err)
 		return err
+	}
+
+	var ldapClient ldapclient.Interface
+	// when there is no ldapOption, we set ldapClient as nil, which means we don't need to sync user info into ldap.
+	if s.LdapOptions != nil && len(s.LdapOptions.Host) != 0 {
+		if s.LdapOptions.Host == ldapclient.FAKE_HOST { // for debug only
+			ldapClient = ldapclient.NewSimpleLdap()
+		} else {
+			ldapClient, err = ldapclient.NewLdapClient(s.LdapOptions, ctx.Done())
+			if err != nil {
+				return fmt.Errorf("failed to connect to ldap service, please check ldap status, error: %v", err)
+			}
+		}
+	} else {
+		klog.Warning("ks-controller-manager starts without ldap provided, it will not sync user into ldap")
 	}
 
 	informerFactory := informers.NewInformerFactories(
@@ -96,6 +113,7 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 	userController := user.Reconciler{
 		MaxConcurrentReconciles: 4,
 		KubeconfigClient:        kubeconfigClient,
+		LdapClient:              ldapClient,
 	}
 	if err = userController.SetupWithManager(mgr); err != nil {
 		klog.Fatalf("Unable to create user controller: %v", err)

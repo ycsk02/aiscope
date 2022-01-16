@@ -1,0 +1,72 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: loginrecords.iam.aiscope
+spec:
+  group: iam.aiscope
+  names:
+    kind: LoginRecord
+    listKind: LoginRecordList
+    plural: loginrecords
+    singular: loginrecord
+  scope: Namespaced
+  versions:
+  - name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: LoginRecord is the Schema for the loginrecords API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LoginRecordSpec defines the desired state of LoginRecord
+            properties:
+              provider:
+                description: Provider of authentication, Ldap/Github etc.
+                type: string
+              reason:
+                description: States failed login attempt reason
+                type: string
+              sourceIP:
+                description: Source IP of client
+                type: string
+              success:
+                description: Successful login attempt or not
+                type: boolean
+              type:
+                description: Which authentication method used, BasicAuth/OAuth
+                type: string
+              userAgent:
+                description: User agent of login attempt
+                type: string
+            required:
+            - provider
+            - reason
+            - sourceIP
+            - success
+            - type
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

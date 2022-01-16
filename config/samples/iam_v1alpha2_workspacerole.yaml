@@ -1,0 +1,6 @@
+apiVersion: iam.aiscope/v1alpha2
+kind: WorkspaceRole
+metadata:
+  name: workspacerole-sample
+spec:
+  # TODO(user): Add fields here
