@@ -6,3 +6,22 @@ objectclass: organizationalunit
 dn: ou=groups,dc=aiscope,dc=io
 objectClass: organizationalUnit
 ou: groups
+
+dn: ou=Users,dc=aiscope,dc=io
+objectclass: organizationalunit
+objectClass: top
+ou: Users
+description: All users in organisation
+
+dn: ou=Groups,dc=aiscope,dc=io
+objectClass: organizationalUnit
+objectClass: top
+ou: Groups
+
+dn: uid=admin,ou=Users,dc=aiscope,dc=io
+objectClass: inetOrgPerson
+objectClass: top
+cn: admin
+sn: admin
+uid: admin
+userPassword:: e1NTSEF9RHRIdmQxOWlkMnBINENyYWJYa0NsSzY1OFNXeUVHSDAK
