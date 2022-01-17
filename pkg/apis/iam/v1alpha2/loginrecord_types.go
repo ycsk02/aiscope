@@ -39,7 +39,17 @@ type LoginRecordSpec struct {
 	Reason string `json:"reason"`
 }
 
-//+kubebuilder:object:root=true
+// +genclient
+// +genclient:nonNamespaced
+// +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type"
+// +kubebuilder:printcolumn:name="Provider",type="string",JSONPath=".spec.provider"
+// +kubebuilder:printcolumn:name="From",type="string",JSONPath=".spec.sourceIP"
+// +kubebuilder:printcolumn:name="Success",type="string",JSONPath=".spec.success"
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".spec.reason"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:categories="iam",scope="Cluster"
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // LoginRecord is the Schema for the loginrecords API
 type LoginRecord struct {

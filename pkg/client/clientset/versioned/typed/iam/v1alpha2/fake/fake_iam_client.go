@@ -31,8 +31,36 @@ type FakeIamV1alpha2 struct {
 	*testing.Fake
 }
 
+func (c *FakeIamV1alpha2) GlobalRoles() v1alpha2.GlobalRoleInterface {
+	return &FakeGlobalRoles{c}
+}
+
+func (c *FakeIamV1alpha2) GlobalRoleBindings() v1alpha2.GlobalRoleBindingInterface {
+	return &FakeGlobalRoleBindings{c}
+}
+
+func (c *FakeIamV1alpha2) Groups() v1alpha2.GroupInterface {
+	return &FakeGroups{c}
+}
+
+func (c *FakeIamV1alpha2) GroupBindings() v1alpha2.GroupBindingInterface {
+	return &FakeGroupBindings{c}
+}
+
+func (c *FakeIamV1alpha2) LoginRecords() v1alpha2.LoginRecordInterface {
+	return &FakeLoginRecords{c}
+}
+
 func (c *FakeIamV1alpha2) Users() v1alpha2.UserInterface {
 	return &FakeUsers{c}
+}
+
+func (c *FakeIamV1alpha2) WorkspaceRoles() v1alpha2.WorkspaceRoleInterface {
+	return &FakeWorkspaceRoles{c}
+}
+
+func (c *FakeIamV1alpha2) WorkspaceRoleBindings() v1alpha2.WorkspaceRoleBindingInterface {
+	return &FakeWorkspaceRoleBindings{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

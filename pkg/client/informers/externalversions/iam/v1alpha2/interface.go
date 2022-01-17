@@ -26,8 +26,22 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// GlobalRoles returns a GlobalRoleInformer.
+	GlobalRoles() GlobalRoleInformer
+	// GlobalRoleBindings returns a GlobalRoleBindingInformer.
+	GlobalRoleBindings() GlobalRoleBindingInformer
+	// Groups returns a GroupInformer.
+	Groups() GroupInformer
+	// GroupBindings returns a GroupBindingInformer.
+	GroupBindings() GroupBindingInformer
+	// LoginRecords returns a LoginRecordInformer.
+	LoginRecords() LoginRecordInformer
 	// Users returns a UserInformer.
 	Users() UserInformer
+	// WorkspaceRoles returns a WorkspaceRoleInformer.
+	WorkspaceRoles() WorkspaceRoleInformer
+	// WorkspaceRoleBindings returns a WorkspaceRoleBindingInformer.
+	WorkspaceRoleBindings() WorkspaceRoleBindingInformer
 }
 
 type version struct {
@@ -41,7 +55,42 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// GlobalRoles returns a GlobalRoleInformer.
+func (v *version) GlobalRoles() GlobalRoleInformer {
+	return &globalRoleInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// GlobalRoleBindings returns a GlobalRoleBindingInformer.
+func (v *version) GlobalRoleBindings() GlobalRoleBindingInformer {
+	return &globalRoleBindingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// Groups returns a GroupInformer.
+func (v *version) Groups() GroupInformer {
+	return &groupInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// GroupBindings returns a GroupBindingInformer.
+func (v *version) GroupBindings() GroupBindingInformer {
+	return &groupBindingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// LoginRecords returns a LoginRecordInformer.
+func (v *version) LoginRecords() LoginRecordInformer {
+	return &loginRecordInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // Users returns a UserInformer.
 func (v *version) Users() UserInformer {
 	return &userInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// WorkspaceRoles returns a WorkspaceRoleInformer.
+func (v *version) WorkspaceRoles() WorkspaceRoleInformer {
+	return &workspaceRoleInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// WorkspaceRoleBindings returns a WorkspaceRoleBindingInformer.
+func (v *version) WorkspaceRoleBindings() WorkspaceRoleBindingInformer {
+	return &workspaceRoleBindingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

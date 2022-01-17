@@ -6,6 +6,8 @@ import (
 	"aiscope/pkg/controller/namespace"
 	"aiscope/pkg/controller/user"
 	"aiscope/pkg/controller/workspace"
+	"aiscope/pkg/controller/workspacerole"
+	"aiscope/pkg/controller/workspacerolebinding"
 	"aiscope/pkg/informers"
 	"aiscope/pkg/models/kubeconfig"
 	"aiscope/pkg/simple/client/k8s"
@@ -64,7 +66,8 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 	}
 
 	informerFactory := informers.NewInformerFactories(
-		kubernetesClient.Kubernetes())
+		kubernetesClient.Kubernetes(),
+		kubernetesClient.AIScope())
 
 	mgrOptions := manager.Options{
 		Port: 8443,
@@ -102,6 +105,16 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 		klog.Fatalf("Unable to create workspace controller: %v", err)
 	}
 
+	workspaceRoleReconciler := &workspacerole.Reconciler{}
+	if err = workspaceRoleReconciler.SetupWithManager(mgr); err != nil {
+		klog.Fatalf("Unable to create workspace role controller: %v", err)
+	}
+
+	workspaceRoleBindingReconciler := &workspacerolebinding.Reconciler{}
+	if err = workspaceRoleBindingReconciler.SetupWithManager(mgr); err != nil {
+		klog.Fatalf("Unable to create workspace role binding controller: %v", err)
+	}
+
 	namespaeReconciler := &namespace.Reconciler{}
 	if err = namespaeReconciler.SetupWithManager(mgr); err != nil {
 		klog.Fatalf("Unable to create namespace controller: %v", err)
@@ -122,7 +135,8 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 	if err = addControllers(mgr,
 		kubernetesClient,
 		informerFactory,
-		ctx.Done()); err != nil {
+		s.AuthenticationOptions,
+		s.AuthenticationOptions.KubectlImage, ctx.Done()); err != nil {
 		klog.Fatalf("unable to register controllers to the manager: %v", err)
 	}
 

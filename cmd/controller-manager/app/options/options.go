@@ -1,6 +1,7 @@
 package options
 
 import (
+	"aiscope/pkg/authentication"
 	"aiscope/pkg/simple/client/k8s"
 	ldapclient "aiscope/pkg/simple/client/ldap"
 	"k8s.io/client-go/tools/leaderelection"
@@ -9,6 +10,7 @@ import (
 
 type AIScopeControllerManagerOptions struct {
 	KubernetesOptions     *k8s.KubernetesOptions
+	AuthenticationOptions *authentication.Options
 	LdapOptions           *ldapclient.Options
 	LeaderElect           bool
 	LeaderElection        *leaderelection.LeaderElectionConfig
@@ -17,6 +19,7 @@ type AIScopeControllerManagerOptions struct {
 func NewAIScopeControllerManagerOptions() *AIScopeControllerManagerOptions {
 	s := &AIScopeControllerManagerOptions{
 		KubernetesOptions:     k8s.NewKubernetesOptions(),
+		AuthenticationOptions: authentication.NewOptions(),
 		LdapOptions:           ldapclient.NewOptions(),
 		LeaderElection: &leaderelection.LeaderElectionConfig{
 			LeaseDuration: 30 * time.Second,

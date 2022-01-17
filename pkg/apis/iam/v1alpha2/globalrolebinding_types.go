@@ -24,8 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-
-//+kubebuilder:object:root=true
+// +genclient
+// +genclient:nonNamespaced
+// +kubebuilder:object:root=true
 // +kubebuilder:resource:categories="iam",scope="Cluster"
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

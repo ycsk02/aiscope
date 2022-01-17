@@ -4,7 +4,7 @@ kubectl create secret generic openldap \
     --from-literal=adminpassword=adminpassword
 kubectl create configmap ldap \
     --namespace ldap \
-    --from-file=ldap/ldif
+    --from-file=ldap/ldifs
 kubectl apply --namespace ldap -f ldap/ldap.yaml
 
 LDAP_POD=$(kubectl -n ldap get pod -l "app.kubernetes.io/name=openldap" -o jsonpath="{.items[0].metadata.name}")

@@ -20,6 +20,34 @@ limitations under the License.
 
 package v1alpha2
 
+// GlobalRoleListerExpansion allows custom methods to be added to
+// GlobalRoleLister.
+type GlobalRoleListerExpansion interface{}
+
+// GlobalRoleBindingListerExpansion allows custom methods to be added to
+// GlobalRoleBindingLister.
+type GlobalRoleBindingListerExpansion interface{}
+
+// GroupListerExpansion allows custom methods to be added to
+// GroupLister.
+type GroupListerExpansion interface{}
+
+// GroupBindingListerExpansion allows custom methods to be added to
+// GroupBindingLister.
+type GroupBindingListerExpansion interface{}
+
+// LoginRecordListerExpansion allows custom methods to be added to
+// LoginRecordLister.
+type LoginRecordListerExpansion interface{}
+
 // UserListerExpansion allows custom methods to be added to
 // UserLister.
 type UserListerExpansion interface{}
+
+// WorkspaceRoleListerExpansion allows custom methods to be added to
+// WorkspaceRoleLister.
+type WorkspaceRoleListerExpansion interface{}
+
+// WorkspaceRoleBindingListerExpansion allows custom methods to be added to
+// WorkspaceRoleBindingLister.
+type WorkspaceRoleBindingListerExpansion interface{}

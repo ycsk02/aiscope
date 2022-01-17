@@ -102,7 +102,7 @@ func DefaultObjectMetaFilter(item metav1.ObjectMeta, filter query.Filter) bool {
 		// /namespaces?page=1&limit=10&uid=a8a8d6cf-f6a5-4fea-9c1b-e57610115706
 	case query.FieldUID:
 		return strings.Compare(string(item.UID), string(filter.Value)) == 0
-		// /deployments?page=1&limit=10&namespace=kubesphere-system
+		// /deployments?page=1&limit=10&namespace=aiscope-system
 	case query.FieldNamespace:
 		return strings.Compare(item.Namespace, string(filter.Value)) == 0
 		// /namespaces?page=1&limit=10&ownerReference=a8a8d6cf-f6a5-4fea-9c1b-e57610115706
@@ -124,7 +124,7 @@ func DefaultObjectMetaFilter(item metav1.ObjectMeta, filter query.Filter) bool {
 		// /namespaces?page=1&limit=10&annotation=openpitrix_runtime
 	case query.FieldAnnotation:
 		return labelMatch(item.Annotations, string(filter.Value))
-		// /namespaces?page=1&limit=10&label=kubesphere.io/workspace:system-workspace
+		// /namespaces?page=1&limit=10&label=aiscope.io/workspace:system-workspace
 	case query.FieldLabel:
 		return labelMatch(item.Labels, string(filter.Value))
 	default:

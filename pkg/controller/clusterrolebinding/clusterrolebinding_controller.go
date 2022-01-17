@@ -1,59 +1,48 @@
-/*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-package globalrolebinding
+package clusterrolebinding
 
 import (
-	aiscope "aiscope/pkg/client/clientset/versioned"
-	iamv1alpha2informers "aiscope/pkg/client/informers/externalversions/iam/v1alpha2"
-	iamv1alpha2listers "aiscope/pkg/client/listers/iam/v1alpha2"
 	"context"
 	"fmt"
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	appsv1informers "k8s.io/client-go/informers/apps/v1"
+	coreinfomers "k8s.io/client-go/informers/core/v1"
+	rbacv1informers "k8s.io/client-go/informers/rbac/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	rbacv1listers "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"time"
+	"k8s.io/klog"
 
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
+
+	iamv1alpha2informers "aiscope/pkg/client/informers/externalversions/iam/v1alpha2"
+	"aiscope/pkg/models/kubectl"
 )
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
 	successSynced = "Synced"
 	// is synced successfully
-	messageResourceSynced = "GlobalRoleBinding synced successfully"
-	controllerName        = "globalrolebinding-controller"
+	messageResourceSynced = "ClusterRoleBinding synced successfully"
+	controllerName        = "clusterrolebinding-controller"
 )
 
 type Controller struct {
-	k8sClient                           kubernetes.Interface
-	ksClient                            aiscope.Interface
-	globalRoleBindingLister             iamv1alpha2listers.GlobalRoleBindingLister
-	globalRoleBindingSynced             cache.InformerSynced
+	k8sClient                  kubernetes.Interface
+	clusterRoleBindingInformer rbacv1informers.ClusterRoleBindingInformer
+	clusterRoleBindingLister   rbacv1listers.ClusterRoleBindingLister
+	clusterRoleBindingSynced   cache.InformerSynced
+	userSynced                 cache.InformerSynced
+	deploymentSynced           cache.InformerSynced
+	podSynced                  cache.InformerSynced
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
 	// means we can ensure we only process a fixed amount of resources at a
@@ -62,11 +51,13 @@ type Controller struct {
 	workqueue workqueue.RateLimitingInterface
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
-	recorder            record.EventRecorder
+	recorder        record.EventRecorder
+	kubectlOperator kubectl.Interface
 }
 
-func NewController(k8sClient kubernetes.Interface, ksClient aiscope.Interface,
-	globalRoleBindingInformer iamv1alpha2informers.GlobalRoleBindingInformer) *Controller {
+func NewController(k8sClient kubernetes.Interface, clusterRoleBindingInformer rbacv1informers.ClusterRoleBindingInformer,
+	deploymentInformer appsv1informers.DeploymentInformer, podInformer coreinfomers.PodInformer,
+	userInformer iamv1alpha2informers.UserInformer, kubectlImage string) *Controller {
 	// Create event broadcaster
 	// Add sample-controller types to the default Kubernetes Scheme so Events can be
 	// logged for sample-controller types.
@@ -77,20 +68,24 @@ func NewController(k8sClient kubernetes.Interface, ksClient aiscope.Interface,
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: k8sClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerName})
 	ctl := &Controller{
-		k8sClient:                           k8sClient,
-		ksClient:                            ksClient,
-		globalRoleBindingLister:             globalRoleBindingInformer.Lister(),
-		globalRoleBindingSynced:             globalRoleBindingInformer.Informer().HasSynced,
-		workqueue:                           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "GlobalRoleBinding"),
-		recorder:                            recorder,
+		k8sClient:                  k8sClient,
+		clusterRoleBindingInformer: clusterRoleBindingInformer,
+		clusterRoleBindingLister:   clusterRoleBindingInformer.Lister(),
+		clusterRoleBindingSynced:   clusterRoleBindingInformer.Informer().HasSynced,
+		userSynced:                 userInformer.Informer().HasSynced,
+		deploymentSynced:           deploymentInformer.Informer().HasSynced,
+		podSynced:                  podInformer.Informer().HasSynced,
+		kubectlOperator:            kubectl.NewOperator(k8sClient, deploymentInformer, podInformer, userInformer, kubectlImage),
+		workqueue:                  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusterRoleBinding"),
+		recorder:                   recorder,
 	}
 	klog.Info("Setting up event handlers")
-	globalRoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: ctl.enqueueGlobalRoleBinding,
+	clusterRoleBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: ctl.enqueueClusterRoleBinding,
 		UpdateFunc: func(old, new interface{}) {
-			ctl.enqueueGlobalRoleBinding(new)
+			ctl.enqueueClusterRoleBinding(new)
 		},
-		DeleteFunc: ctl.enqueueGlobalRoleBinding,
+		DeleteFunc: ctl.enqueueClusterRoleBinding,
 	})
 	return ctl
 }
@@ -100,15 +95,11 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	klog.Info("Starting GlobalRoleBinding controller")
+	klog.Info("Starting ClusterRoleBinding controller")
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-
-	synced := make([]cache.InformerSynced, 0)
-	synced = append(synced, c.globalRoleBindingSynced)
-
-	if ok := cache.WaitForCacheSync(stopCh, synced...); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.clusterRoleBindingSynced, c.userSynced, c.deploymentSynced, c.podSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -124,7 +115,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	return nil
 }
 
-func (c *Controller) enqueueGlobalRoleBinding(obj interface{}) {
+func (c *Controller) enqueueClusterRoleBinding(obj interface{}) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
@@ -197,89 +188,35 @@ func (c *Controller) processNextWorkItem() bool {
 // with the current status of the resource.
 func (c *Controller) reconcile(key string) error {
 
-	globalRoleBinding, err := c.globalRoleBindingLister.Get(key)
+	// Get the clusterRoleBinding with this name
+	clusterRoleBinding, err := c.clusterRoleBindingLister.Get(key)
 	if err != nil {
 		// The user may no longer exist, in which case we stop
 		// processing.
 		if errors.IsNotFound(err) {
-			utilruntime.HandleError(fmt.Errorf("globalrolebinding '%s' in work queue no longer exists", key))
+			utilruntime.HandleError(fmt.Errorf("clusterrolebinding '%s' in work queue no longer exists", key))
 			return nil
 		}
 		klog.Error(err)
 		return err
 	}
 
-	if globalRoleBinding.RoleRef.Name == iamv1alpha2.PlatformAdmin {
-		if err := c.assignClusterAdminRole(globalRoleBinding); err != nil {
-			klog.Error(err)
-			return err
+	if clusterRoleBinding.RoleRef.Name == iamv1alpha2.ClusterAdmin {
+		for _, subject := range clusterRoleBinding.Subjects {
+			if subject.Kind == iamv1alpha2.ResourceKindUser {
+				err = c.kubectlOperator.CreateKubectlDeploy(subject.Name, clusterRoleBinding)
+				if err != nil {
+					klog.Error(err)
+					return err
+				}
+			}
 		}
 	}
 
-	c.recorder.Event(globalRoleBinding, corev1.EventTypeNormal, successSynced, messageResourceSynced)
+	c.recorder.Event(clusterRoleBinding, corev1.EventTypeNormal, successSynced, messageResourceSynced)
 	return nil
 }
 
 func (c *Controller) Start(ctx context.Context) error {
 	return c.Run(4, ctx.Done())
-}
-
-func (c *Controller) assignClusterAdminRole(globalRoleBinding *iamv1alpha2.GlobalRoleBinding) error {
-
-	username := findExpectUsername(globalRoleBinding)
-	if username == "" {
-		return nil
-	}
-
-	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s", username, iamv1alpha2.ClusterAdmin),
-		},
-		Subjects: ensureSubjectAPIVersionIsValid(globalRoleBinding.Subjects),
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     iamv1alpha2.ResourceKindClusterRole,
-			Name:     iamv1alpha2.ClusterAdmin,
-		},
-	}
-
-	err := controllerutil.SetControllerReference(globalRoleBinding, clusterRoleBinding, scheme.Scheme)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.k8sClient.RbacV1().ClusterRoleBindings().Create(context.Background(), clusterRoleBinding, metav1.CreateOptions{})
-	if err != nil {
-		if errors.IsAlreadyExists(err) {
-			return nil
-		}
-		return err
-	}
-
-	return nil
-}
-
-func findExpectUsername(globalRoleBinding *iamv1alpha2.GlobalRoleBinding) string {
-	for _, subject := range globalRoleBinding.Subjects {
-		if subject.Kind == iamv1alpha2.ResourceKindUser {
-			return subject.Name
-		}
-	}
-	return ""
-}
-
-func ensureSubjectAPIVersionIsValid(subjects []rbacv1.Subject) []rbacv1.Subject {
-	validSubjects := make([]rbacv1.Subject, 0)
-	for _, subject := range subjects {
-		if subject.Kind == iamv1alpha2.ResourceKindUser {
-			validSubject := rbacv1.Subject{
-				Kind:     iamv1alpha2.ResourceKindUser,
-				APIGroup: "rbac.authorization.k8s.io",
-				Name:     subject.Name,
-			}
-			validSubjects = append(validSubjects, validSubject)
-		}
-	}
-	return validSubjects
 }

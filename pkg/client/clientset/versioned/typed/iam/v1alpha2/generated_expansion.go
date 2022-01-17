@@ -20,4 +20,18 @@ limitations under the License.
 
 package v1alpha2
 
+type GlobalRoleExpansion interface{}
+
+type GlobalRoleBindingExpansion interface{}
+
+type GroupExpansion interface{}
+
+type GroupBindingExpansion interface{}
+
+type LoginRecordExpansion interface{}
+
 type UserExpansion interface{}
+
+type WorkspaceRoleExpansion interface{}
+
+type WorkspaceRoleBindingExpansion interface{}

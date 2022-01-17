@@ -14,49 +14,186 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package iam
+package loginrecord
 
 import (
+	aiscope "aiscope/pkg/client/clientset/versioned"
+	iamv1alpha2informers "aiscope/pkg/client/informers/externalversions/iam/v1alpha2"
+	iamv1alpha2listers "aiscope/pkg/client/listers/iam/v1alpha2"
+	"aiscope/pkg/controller/utils/controller"
 	"context"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
+	"sort"
+	"time"
 
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
 )
 
-// LoginRecordReconciler reconciles a LoginRecord object
-type LoginRecordReconciler struct {
-	client.Client
-	Scheme *runtime.Scheme
+const (
+	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
+	successSynced = "Synced"
+	// is synced successfully
+	messageResourceSynced = "LoginRecord synced successfully"
+	controllerName        = "loginrecord-controller"
+)
+
+type loginRecordController struct {
+	controller.BaseController
+	k8sClient                   kubernetes.Interface
+	aiClient                    aiscope.Interface
+	loginRecordLister           iamv1alpha2listers.LoginRecordLister
+	loginRecordSynced           cache.InformerSynced
+	userLister                  iamv1alpha2listers.UserLister
+	userSynced                  cache.InformerSynced
+	loginHistoryRetentionPeriod time.Duration
+	loginHistoryMaximumEntries  int
+	// recorder is an event recorder for recording Event resources to the
+	// Kubernetes API.
+	recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=iam.aiscope,resources=loginrecords,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=iam.aiscope,resources=loginrecords/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=iam.aiscope,resources=loginrecords/finalizers,verbs=update
+func NewLoginRecordController(k8sClient kubernetes.Interface,
+	aiClient aiscope.Interface,
+	loginRecordInformer iamv1alpha2informers.LoginRecordInformer,
+	userInformer iamv1alpha2informers.UserInformer,
+	loginHistoryRetentionPeriod time.Duration,
+	loginHistoryMaximumEntries int) *loginRecordController {
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the LoginRecord object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
-func (r *LoginRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
-
-	// TODO(user): your logic here
-
-	return ctrl.Result{}, nil
+	klog.V(4).Info("Creating event broadcaster")
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(klog.Infof)
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: k8sClient.CoreV1().Events("")})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerName})
+	ctl := &loginRecordController{
+		BaseController: controller.BaseController{
+			Workqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "LoginRecords"),
+			Synced:    []cache.InformerSynced{loginRecordInformer.Informer().HasSynced, userInformer.Informer().HasSynced},
+			Name:      controllerName,
+		},
+		k8sClient:                   k8sClient,
+		aiClient:                    aiClient,
+		loginRecordLister:           loginRecordInformer.Lister(),
+		userLister:                  userInformer.Lister(),
+		loginHistoryRetentionPeriod: loginHistoryRetentionPeriod,
+		loginHistoryMaximumEntries:  loginHistoryMaximumEntries,
+		recorder:                    recorder,
+	}
+	ctl.Handler = ctl.reconcile
+	klog.Info("Setting up event handlers")
+	loginRecordInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: ctl.Enqueue,
+		UpdateFunc: func(old, new interface{}) {
+			ctl.Enqueue(new)
+		},
+		DeleteFunc: ctl.Enqueue,
+	})
+	return ctl
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *LoginRecordReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&iamv1alpha2.LoginRecord{}).
-		Complete(r)
+func (c *loginRecordController) Start(ctx context.Context) error {
+	return c.Run(5, ctx.Done())
 }
+
+func (c *loginRecordController) reconcile(key string) error {
+	loginRecord, err := c.loginRecordLister.Get(key)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			utilruntime.HandleError(fmt.Errorf("login record '%s' in work queue no longer exists", key))
+			return nil
+		}
+		klog.Error(err)
+		return err
+	}
+
+	if !loginRecord.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The object is being deleted
+		// Our finalizer has finished, so the reconciler can do nothing.
+		return nil
+	}
+
+	user, err := c.userForLoginRecord(loginRecord)
+	if err != nil {
+		// delete orphan object
+		if errors.IsNotFound(err) {
+			return c.aiClient.IamV1alpha2().LoginRecords().Delete(context.TODO(), loginRecord.Name, metav1.DeleteOptions{})
+		}
+		return err
+	}
+
+	if err = c.updateUserLastLoginTime(user, loginRecord); err != nil {
+		return err
+	}
+
+	if err = c.shrinkEntriesFor(user); err != nil {
+		return err
+	}
+
+	now := time.Now()
+	// login record beyonds retention period
+	if loginRecord.CreationTimestamp.Add(c.loginHistoryRetentionPeriod).Before(now) {
+		if err = c.aiClient.IamV1alpha2().LoginRecords().Delete(context.Background(), loginRecord.Name, *metav1.NewDeleteOptions(0)); err != nil {
+			klog.Error(err)
+			return err
+		}
+	} else { // put item back into the queue
+		c.Workqueue.AddAfter(key, loginRecord.CreationTimestamp.Add(c.loginHistoryRetentionPeriod).Sub(now))
+	}
+	c.recorder.Event(loginRecord, corev1.EventTypeNormal, successSynced, messageResourceSynced)
+	return nil
+}
+
+// updateUserLastLoginTime accepts a login object and set user lastLoginTime field
+func (c *loginRecordController) updateUserLastLoginTime(user *iamv1alpha2.User, loginRecord *iamv1alpha2.LoginRecord) error {
+	// update lastLoginTime
+	if user.DeletionTimestamp.IsZero() &&
+		(user.Status.LastLoginTime == nil || user.Status.LastLoginTime.Before(&loginRecord.CreationTimestamp)) {
+		user.Status.LastLoginTime = &loginRecord.CreationTimestamp
+		_, err := c.aiClient.IamV1alpha2().Users().Update(context.Background(), user, metav1.UpdateOptions{})
+		return err
+	}
+	return nil
+}
+
+// shrinkEntriesFor will delete old entries out of limit
+func (c *loginRecordController) shrinkEntriesFor(user *iamv1alpha2.User) error {
+	loginRecords, err := c.loginRecordLister.List(labels.SelectorFromSet(labels.Set{iamv1alpha2.UserReferenceLabel: user.Name}))
+	if err != nil {
+		return err
+	}
+	if len(loginRecords) <= c.loginHistoryMaximumEntries {
+		return nil
+	}
+	sort.Slice(loginRecords, func(i, j int) bool {
+		return loginRecords[j].CreationTimestamp.After(loginRecords[i].CreationTimestamp.Time)
+	})
+	oldEntries := loginRecords[:len(loginRecords)-c.loginHistoryMaximumEntries]
+	for _, r := range oldEntries {
+		err = c.aiClient.IamV1alpha2().LoginRecords().Delete(context.TODO(), r.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *loginRecordController) userForLoginRecord(loginRecord *iamv1alpha2.LoginRecord) (*iamv1alpha2.User, error) {
+	username, ok := loginRecord.Labels[iamv1alpha2.UserReferenceLabel]
+	if !ok || len(username) == 0 {
+		klog.V(4).Info("login doesn't belong to any user")
+		return nil, errors.NewNotFound(iamv1alpha2.Resource(iamv1alpha2.ResourcesSingularUser), username)
+	}
+	return c.userLister.Get(username)
+}
+

@@ -27,7 +27,7 @@ func NewSimpleLdap() Interface {
 			Name: "admin",
 		},
 		Spec: iamv1alpha2.UserSpec{
-			Email:             "admin@kubesphere.io",
+			Email:             "admin@aiscope.io",
 			Lang:              "eng",
 			Description:       "administrator",
 			Groups:            nil,
