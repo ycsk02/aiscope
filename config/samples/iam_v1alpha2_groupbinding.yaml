@@ -1,0 +1,6 @@
+apiVersion: iam.aiscope/v1alpha2
+kind: GroupBinding
+metadata:
+  name: groupbinding-sample
+spec:
+  # TODO(user): Add fields here
