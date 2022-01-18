@@ -1,0 +1,2 @@
+FROM 192.168.0.93/ai/jupyter-tensorflow-cuda-full:v1.3.1-rc.0
+RUN conda install pytorch torchvision torchaudio -c pytorch

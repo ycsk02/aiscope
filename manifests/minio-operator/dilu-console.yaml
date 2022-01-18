@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dilu-console
+  namespace: ai
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: dilu-minio.platform.aiscope.io
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: dilu-console
+            port:
+              name: http-console

@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dilu-minio
+  namespace: ai
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: s3.platform.aiscope.io
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: minio
+            port:
+              name: http-minio

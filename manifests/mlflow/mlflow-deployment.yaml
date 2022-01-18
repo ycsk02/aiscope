@@ -1,0 +1,93 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+  labels:
+    app: mlflow
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 5000
+      name: server
+      targetPort: 5000
+  selector:
+    app: mlflow
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mlflow
+spec:
+  serviceName: mlflow
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mlflow
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      containers:
+        - name: mlflow
+          imagePullPolicy: IfNotPresent
+          image: 192.168.0.93/ai/mlflow:1.21.0-21
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 5000
+              name: server
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow.platform.aiscope.io/"
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: "http://s3.platform.aiscope.io/"
+            - name: AWS_ACCESS_KEY_ID
+              value: "mlflow"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "mlflow1234"
+            - name: ARTIFACT_ROOT
+              value: "s3://mlflow/"
+            - name: BACKEND_URI
+              value: "mysql+pymysql://root:dilumotors@192.168.0.211:13306/mlflow"
+          volumeMounts:
+          - name: data
+            mountPath: /mlflow
+  selector:
+    matchLabels:
+      app: mlflow
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "local-path"
+      resources:
+        requests:
+          storage: 100Gi
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlflow
+  namespace: ai
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: mlflow.platform.aiscope.io
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: mlflow
+            port:
+              name: server
+
