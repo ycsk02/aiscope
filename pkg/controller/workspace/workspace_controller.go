@@ -17,11 +17,15 @@ limitations under the License.
 package workspace
 
 import (
+	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
 	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
+	"aiscope/pkg/constants"
 	"aiscope/pkg/utils/k8sutil"
 	"aiscope/pkg/utils/sliceutil"
 	"context"
+	"fmt"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -72,6 +76,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if workspace.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !sliceutil.HasString(workspace.ObjectMeta.Finalizers, finalizer) {
+			if err := r.initDevopsNamespace(rootCtx, logger, workspace.Name); err != nil {
+				return ctrl.Result{}, err
+			}
+
 			workspace.ObjectMeta.Finalizers = append(workspace.ObjectMeta.Finalizers, finalizer)
 			if err := r.Update(rootCtx, workspace); err != nil {
 				return ctrl.Result{}, err
@@ -123,6 +131,30 @@ func (r *Reconciler) bindWorkspace(ctx context.Context, logger logr.Logger, name
 		}
 	}
 	return nil
+}
+
+func (r *Reconciler) initDevopsNamespace(ctx context.Context, logger logr.Logger, workspace string) error {
+
+	creatorNamespace := newCreatorNamespace(constants.AIScopeCreator, workspace)
+
+	if err := r.Client.Create(ctx, creatorNamespace); err != nil {
+		if errors.IsAlreadyExists(err) {
+			return nil
+		}
+		logger.Error(err, "create devops namespace failed")
+		return err
+	}
+
+	return nil
+}
+
+func newCreatorNamespace(creator string, workspace string) *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       fmt.Sprintf(constants.TenantDevopsNamespaceFormat, workspace),
+			Labels:     map[string]string{iamv1alpha2.UserReferenceLabel: creator, tenantv1alpha2.WorkspaceLabel: workspace},
+		},
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.

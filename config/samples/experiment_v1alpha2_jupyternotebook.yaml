@@ -1,0 +1,6 @@
+apiVersion: experiment.aiscope/v1alpha2
+kind: JupyterNotebook
+metadata:
+  name: jupyternotebook-sample
+spec:
+  # TODO(user): Add fields here

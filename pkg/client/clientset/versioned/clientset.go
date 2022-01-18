@@ -21,6 +21,7 @@ limitations under the License.
 package versioned
 
 import (
+	experimentv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/experiment/v1alpha2"
 	iamv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/iam/v1alpha2"
 	tenantv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/tenant/v1alpha2"
 	"fmt"
@@ -32,6 +33,7 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	ExperimentV1alpha2() experimentv1alpha2.ExperimentV1alpha2Interface
 	IamV1alpha2() iamv1alpha2.IamV1alpha2Interface
 	TenantV1alpha2() tenantv1alpha2.TenantV1alpha2Interface
 }
@@ -40,8 +42,14 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	iamV1alpha2    *iamv1alpha2.IamV1alpha2Client
-	tenantV1alpha2 *tenantv1alpha2.TenantV1alpha2Client
+	experimentV1alpha2 *experimentv1alpha2.ExperimentV1alpha2Client
+	iamV1alpha2        *iamv1alpha2.IamV1alpha2Client
+	tenantV1alpha2     *tenantv1alpha2.TenantV1alpha2Client
+}
+
+// ExperimentV1alpha2 retrieves the ExperimentV1alpha2Client
+func (c *Clientset) ExperimentV1alpha2() experimentv1alpha2.ExperimentV1alpha2Interface {
+	return c.experimentV1alpha2
 }
 
 // IamV1alpha2 retrieves the IamV1alpha2Client
@@ -75,6 +83,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
+	cs.experimentV1alpha2, err = experimentv1alpha2.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 	cs.iamV1alpha2, err = iamv1alpha2.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -95,6 +107,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
+	cs.experimentV1alpha2 = experimentv1alpha2.NewForConfigOrDie(c)
 	cs.iamV1alpha2 = iamv1alpha2.NewForConfigOrDie(c)
 	cs.tenantV1alpha2 = tenantv1alpha2.NewForConfigOrDie(c)
 
@@ -105,6 +118,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.experimentV1alpha2 = experimentv1alpha2.New(c)
 	cs.iamV1alpha2 = iamv1alpha2.New(c)
 	cs.tenantV1alpha2 = tenantv1alpha2.New(c)
 

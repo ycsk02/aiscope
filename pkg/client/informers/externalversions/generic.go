@@ -21,7 +21,8 @@ limitations under the License.
 package externalversions
 
 import (
-	v1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
+	v1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
+	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
 	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
 	"fmt"
 
@@ -55,22 +56,30 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=iam, Version=v1alpha2
-	case v1alpha2.SchemeGroupVersion.WithResource("globalroles"):
+	// Group=experiment, Version=v1alpha2
+	case v1alpha2.SchemeGroupVersion.WithResource("codeservers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Experiment().V1alpha2().CodeServers().Informer()}, nil
+	case v1alpha2.SchemeGroupVersion.WithResource("jupyternotebooks"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Experiment().V1alpha2().JupyterNotebooks().Informer()}, nil
+	case v1alpha2.SchemeGroupVersion.WithResource("trackingservers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Experiment().V1alpha2().TrackingServers().Informer()}, nil
+
+		// Group=iam, Version=v1alpha2
+	case iamv1alpha2.SchemeGroupVersion.WithResource("globalroles"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().GlobalRoles().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("globalrolebindings"):
+	case iamv1alpha2.SchemeGroupVersion.WithResource("globalrolebindings"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().GlobalRoleBindings().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("groups"):
+	case iamv1alpha2.SchemeGroupVersion.WithResource("groups"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().Groups().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("groupbindings"):
+	case iamv1alpha2.SchemeGroupVersion.WithResource("groupbindings"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().GroupBindings().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("loginrecords"):
+	case iamv1alpha2.SchemeGroupVersion.WithResource("loginrecords"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().LoginRecords().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("users"):
+	case iamv1alpha2.SchemeGroupVersion.WithResource("users"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().Users().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("workspaceroles"):
+	case iamv1alpha2.SchemeGroupVersion.WithResource("workspaceroles"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().WorkspaceRoles().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("workspacerolebindings"):
+	case iamv1alpha2.SchemeGroupVersion.WithResource("workspacerolebindings"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Iam().V1alpha2().WorkspaceRoleBindings().Informer()}, nil
 
 		// Group=tenant, Version=v1alpha2

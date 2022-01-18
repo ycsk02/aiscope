@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: optuna-dashboard
+  namespace: ai
+spec:
+  selector:
+    matchLabels:
+      app: optuna-dashboard
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: optuna-dashboard
+    spec:
+      containers:
+      - name: optuna-dashboard
+        image: 192.168.0.93/ai/optuna-dashboard:v1
+        ports:
+        - containerPort: 8080
+        command: ["optuna-dashboard"]
+        args: ["mysql+pymysql://optuna:optuna1234@192.168.0.211:13306/optuna", "--port", "8080", "--host", "0.0.0.0"]
+        env:
+          - name: MLFLOW_S3_ENDPOINT_URL
+            value: "http://s3.platform.aiscope.io/"
+          - name: AWS_ACCESS_KEY_ID
+            value: "mlflow"
+          - name: AWS_SECRET_ACCESS_KEY
+            value: "mlflow1234"
+          - name: ARTIFACT_ROOT
+            value: "s3://mlflow/"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: optuna-dashboard
+  namespace: ai
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: optuna-dashboard
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: optuna-dashboard
+  namespace: ai
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: optuna.platform.aiscope.io
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: optuna-dashboard
+            port:
+              name: http
+

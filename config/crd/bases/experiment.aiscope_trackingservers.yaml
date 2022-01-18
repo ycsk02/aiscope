@@ -1,0 +1,94 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: trackingservers.experiment.aiscope
+spec:
+  group: experiment.aiscope
+  names:
+    kind: TrackingServer
+    listKind: TrackingServerList
+    plural: trackingservers
+    singular: trackingserver
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.s3_endpoint_url
+      name: S3_ENDPOINT_URL
+      type: string
+    - jsonPath: .spec.artifact_root
+      name: ARTIFACT_ROOT
+      type: boolean
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: TrackingServer is the Schema for the trackingservers API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TrackingServerSpec defines the desired state of TrackingServer
+            properties:
+              artifact_root:
+                type: string
+              aws_access_key:
+                type: string
+              aws_secret_key:
+                type: string
+              backend_uri:
+                type: string
+              image:
+                type: string
+              s3_endpoint_url:
+                type: string
+              size:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                format: int32
+                type: integer
+              storageClassName:
+                type: string
+              url:
+                type: string
+              volumeSize:
+                type: string
+            required:
+            - artifact_root
+            - aws_access_key
+            - aws_secret_key
+            - backend_uri
+            - image
+            - s3_endpoint_url
+            - size
+            - storageClassName
+            - url
+            - volumeSize
+            type: object
+          status:
+            description: TrackingServerStatus defines the observed state of TrackingServer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -1,0 +1,8 @@
+FROM seldonio/mlflowserver:1.11.2
+COPY conda.yaml /tmp/conda.yaml
+COPY conda_env_create.py /microservice/conda_env_create.py
+RUN conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+RUN conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+RUN conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+RUN chmod 777 /microservice && mkdir /.cache && chown 8888:8888 /.cache && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+RUN conda env create -n mlflow --file /tmp/conda.yaml

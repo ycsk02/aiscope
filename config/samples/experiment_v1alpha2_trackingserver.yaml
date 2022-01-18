@@ -1,0 +1,6 @@
+apiVersion: experiment.aiscope/v1alpha2
+kind: TrackingServer
+metadata:
+  name: trackingserver-sample
+spec:
+  # TODO(user): Add fields here

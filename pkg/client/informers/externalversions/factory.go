@@ -22,6 +22,7 @@ package externalversions
 
 import (
 	versioned "aiscope/pkg/client/clientset/versioned"
+	experiment "aiscope/pkg/client/informers/externalversions/experiment"
 	iam "aiscope/pkg/client/informers/externalversions/iam"
 	internalinterfaces "aiscope/pkg/client/informers/externalversions/internalinterfaces"
 	tenant "aiscope/pkg/client/informers/externalversions/tenant"
@@ -175,8 +176,13 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
+	Experiment() experiment.Interface
 	Iam() iam.Interface
 	Tenant() tenant.Interface
+}
+
+func (f *sharedInformerFactory) Experiment() experiment.Interface {
+	return experiment.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Iam() iam.Interface {

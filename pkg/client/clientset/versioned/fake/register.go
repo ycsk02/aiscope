@@ -21,6 +21,7 @@ limitations under the License.
 package fake
 
 import (
+	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
 	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
 
@@ -35,6 +36,7 @@ var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
 
 var localSchemeBuilder = runtime.SchemeBuilder{
+	experimentv1alpha2.AddToScheme,
 	iamv1alpha2.AddToScheme,
 	tenantv1alpha2.AddToScheme,
 }

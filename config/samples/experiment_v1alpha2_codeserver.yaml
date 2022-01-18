@@ -1,0 +1,6 @@
+apiVersion: experiment.aiscope/v1alpha2
+kind: CodeServer
+metadata:
+  name: codeserver-sample
+spec:
+  # TODO(user): Add fields here

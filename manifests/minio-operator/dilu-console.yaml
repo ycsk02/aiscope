@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aiscope-console
+  namespace: ai
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: aiscope-minio.platform.aiscope.io
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: aiscope-console
+            port:
+              name: http-console

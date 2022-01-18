@@ -1,0 +1,92 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-lv1
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1024Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Block
+  local:
+    path: /dev/disk/by-id/dm-name-data-lv1
+  nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ceph-01
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-lv2
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1024Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Block
+  local:
+    path: /dev/disk/by-id/dm-name-data-lv2
+  nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ceph-01
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-lv3
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1024Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Block
+  local:
+    path: /dev/disk/by-id/dm-name-data-lv3
+  nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ceph-01
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-lv4
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1024Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Block
+  local:
+    path: /dev/disk/by-id/dm-name-data-lv4
+  nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ceph-01
