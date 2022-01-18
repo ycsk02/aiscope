@@ -22,6 +22,8 @@ package fake
 
 import (
 	clientset "aiscope/pkg/client/clientset/versioned"
+	experimentv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/experiment/v1alpha2"
+	fakeexperimentv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/experiment/v1alpha2/fake"
 	iamv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/iam/v1alpha2"
 	fakeiamv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/iam/v1alpha2/fake"
 	tenantv1alpha2 "aiscope/pkg/client/clientset/versioned/typed/tenant/v1alpha2"
@@ -80,6 +82,11 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 }
 
 var _ clientset.Interface = &Clientset{}
+
+// ExperimentV1alpha2 retrieves the ExperimentV1alpha2Client
+func (c *Clientset) ExperimentV1alpha2() experimentv1alpha2.ExperimentV1alpha2Interface {
+	return &fakeexperimentv1alpha2.FakeExperimentV1alpha2{Fake: &c.Fake}
+}
 
 // IamV1alpha2 retrieves the IamV1alpha2Client
 func (c *Clientset) IamV1alpha2() iamv1alpha2.IamV1alpha2Interface {

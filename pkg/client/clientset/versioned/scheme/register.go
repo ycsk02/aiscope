@@ -21,6 +21,7 @@ limitations under the License.
 package scheme
 
 import (
+	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
 	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
 
@@ -35,6 +36,7 @@ var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
+	experimentv1alpha2.AddToScheme,
 	iamv1alpha2.AddToScheme,
 	tenantv1alpha2.AddToScheme,
 }

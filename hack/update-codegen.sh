@@ -26,7 +26,7 @@ SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 ${SCRIPT_ROOT}/hack/generate-groups.sh "all" \
   aiscope/pkg/client aiscope/pkg/apis \
-  "tenant:v1alpha2 iam:v1alpha2" \
+  "tenant:v1alpha2 iam:v1alpha2 experiment:v1alpha2" \
   --go-header-file "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
   --output-base "$(dirname ${BASH_SOURCE})/../../" -v 10
 
