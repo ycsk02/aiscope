@@ -8,6 +8,6 @@ data:
   config.env: ZXhwb3J0IE1JTklPX1JPT1RfVVNFUj0ibWxmbG93IgpleHBvcnQgTUlOSU9fUk9PVF9QQVNTV09SRD0ibWxmbG93MTIzNCIKZXhwb3J0IE1JTklPX1NUT1JBR0VfQ0xBU1NfU1RBTkRBUkQ9ImxvY2FsLXBhdGgiCmV4cG9ydCBNSU5JT19CUk9XU0VSPSJvbiIK
 kind: Secret
 metadata:
-  name: dilu-tenant-external
+  name: aiscope-tenant-external
   namespace: ai
 type: Opaque

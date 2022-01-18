@@ -66,7 +66,7 @@ console:
 ## MinIO Tenant Definition
 tenants:
   # Tenant name
-  - name: dilu
+  - name: aiscope
     ## Registry location and Tag to download MinIO Server image
     image:
       repository: minio/minio
@@ -116,7 +116,7 @@ tenants:
     secrets:
       # create a kubernetes secret object with the accessKey and secretKey as defined here.
       enabled: true
-      name: dilu-secret
+      name: aiscope-secret
       accessKey: minio
       secretKey: minio123
     # pool metrics to be read by Prometheus

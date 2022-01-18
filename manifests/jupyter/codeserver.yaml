@@ -2,67 +2,72 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mlflow
+  name: codeserver
+  namespace: ai
   labels:
-    app: mlflow
+    app: codeserver
 spec:
   type: ClusterIP
   clusterIP: None
   ports:
-    - port: 5000
+    - port: 8443
       name: server
-      targetPort: 5000
+      targetPort: 8443
   selector:
-    app: mlflow
+    app: codeserver
 
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mlflow
+  name: codeserver
+  namespace: ai
 spec:
-  serviceName: mlflow
+  serviceName: codeserver
   replicas: 1
   template:
     metadata:
       labels:
-        app: mlflow
+        app: codeserver
       annotations:
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       containers:
-        - name: mlflow
+        - name: codeserver
           imagePullPolicy: IfNotPresent
-          image: 192.168.0.93/ai/mlflow:1.21.0-21
+          image: linuxserver/code-server:3.12.0
           resources:
             requests:
               memory: "2Gi"
               cpu: "500m"
+            limits:
+              # GiB
+              aliyun.com/gpu-mem: 1
           ports:
-            - containerPort: 5000
+            - containerPort: 8443
               name: server
           env:
-            - name: MLFLOW_TRACKING_URI
-              value: "http://mlflow.platform.aiscope.io/"
-            - name: MLFLOW_S3_ENDPOINT_URL
-              value: "http://s3.platform.aiscope.io/"
-            - name: AWS_ACCESS_KEY_ID
-              value: "mlflow"
-            - name: AWS_SECRET_ACCESS_KEY
-              value: "mlflow1234"
-            - name: ARTIFACT_ROOT
-              value: "s3://mlflow/"
-            - name: BACKEND_URI
-              value: "mysql+pymysql://root:abc@192.168.0.211:3306/mlflow"
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: PASSWORD
+              value: "codeserver1234"
+            - name: SUDO_PASSWORD
+              value: "codeserver1234"
+            - name: PROXY_DOMAIN
+              value: "codeserver.platform.aiscope.io"
           volumeMounts:
-          - name: data
-            mountPath: /mlflow
+          - name: config
+            mountPath: /config
   selector:
     matchLabels:
-      app: mlflow
+      app: codeserver
   volumeClaimTemplates:
   - metadata:
-      name: data
+      name: config
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: "local-path"
@@ -74,20 +79,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: mlflow
+  name: codeserver
   namespace: ai
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host: mlflow.platform.aiscope.io
+  - host: codeserver.platform.aiscope.io
     http:
       paths:
       - path: /
         pathType: ImplementationSpecific
         backend:
           service:
-            name: mlflow
+            name: codeserver
             port:
               name: server
 
