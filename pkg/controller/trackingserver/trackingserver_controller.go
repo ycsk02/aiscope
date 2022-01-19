@@ -17,6 +17,7 @@ limitations under the License.
 package trackingserver
 
 import (
+	controllerutils "aiscope/pkg/controller/utils/controller"
 	"aiscope/pkg/utils/sliceutil"
 	"context"
 	"github.com/go-logr/logr"
@@ -28,11 +29,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
 )
@@ -76,12 +76,10 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				return ctrl.Result{}, err
 			}
 		}
-
-		if err := r.reconcileDeployment(rootCtx, logger, trackingServer); err != nil {
-			return reconcile.Result{}, err
+	} else {
+		if err := r.deleteTrackingServerResource(rootCtx, logger, trackingServer); err != nil {
 		}
 
-	} else {
 		if sliceutil.HasString(trackingServer.ObjectMeta.Finalizers, finalizer) {
 			trackingServer.ObjectMeta.Finalizers = sliceutil.RemoveString(trackingServer.ObjectMeta.Finalizers, func(item string) bool {
 				return item == finalizer
@@ -95,7 +93,44 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	if err := r.reconcileDeployment(rootCtx, logger, trackingServer); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	r.Recorder.Event(trackingServer, corev1.EventTypeNormal, controllerutils.SuccessSynced, controllerutils.MessageResourceSynced)
 	return ctrl.Result{}, nil
+}
+
+func (r *TrackingServerReconciler) deleteTrackingServerResource(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
+	deployment := &appsv1.Deployment{}
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, deployment); err != nil {
+		if errors.IsNotFound(err) {
+			logger.V(4).Info("related deployment not found", "trackingserver", instance.Name)
+		} else {
+			logger.Error(err, "failed to get related deployment")
+		}
+	} else {
+		if err := r.Delete(ctx, deployment); err != nil {
+			return err
+		}
+		logger.V(4).Info("deployment has been deleted successfully ")
+	}
+
+	service := &corev1.Service{}
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, service); err != nil {
+		if errors.IsNotFound(err) {
+			logger.V(4).Info("related service not found", "trackingserver", instance.Name)
+		} else {
+			logger.Error(err, "failed to get related service")
+		}
+	} else {
+		if err := r.Delete(ctx, service); err != nil {
+			return err
+		}
+		logger.V(4).Info("service has been deleted successfully ")
+	}
+
+	return nil
 }
 
 func (r *TrackingServerReconciler) reconcileDeployment(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
@@ -108,7 +143,7 @@ func (r *TrackingServerReconciler) reconcileDeployment(ctx context.Context, logg
 	currentDeployment := &appsv1.Deployment{}
 	 if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, currentDeployment); err != nil {
 		 if errors.IsNotFound(err) {
-			 logger.V(4).Info("create trackingserver", "workspace", instance.Name)
+			 logger.V(4).Info("create trackingserver", "trackingserver", instance.Name)
 			 if err := r.Create(ctx, currentDeployment); err != nil {
 				 logger.Error(err, "create trackingserver failed")
 				 return err
@@ -133,7 +168,7 @@ func (r *TrackingServerReconciler) reconcileDeployment(ctx context.Context, logg
 }
 
 func (r *TrackingServerReconciler) newDeploymentForTrackingServer(instance *experimentv1alpha2.TrackingServer) *appsv1.Deployment {
-	replicas := int32(1)
+	replicas := instance.Spec.Size
 	labels := labelsForTrackingServer(instance.Name)
 
 	deployment := &appsv1.Deployment{
