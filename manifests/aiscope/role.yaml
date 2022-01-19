@@ -1000,11 +1000,11 @@ kind: GlobalRoleBinding
 metadata:
   name: admin
 roleRef:
-  apiGroup: iam.aiscope.io/v1alpha2
+  apiGroup: iam.aiscope/v1alpha2
   kind: GlobalRole
   name: platform-admin
 subjects:
-  - apiGroup: iam.aiscope.io/v1alpha2
+  - apiGroup: iam.aiscope/v1alpha2
     kind: User
     name: admin
 
@@ -1014,11 +1014,11 @@ kind: GlobalRoleBinding
 metadata:
   name: anonymous
 roleRef:
-  apiGroup: iam.aiscope.io/v1alpha2
+  apiGroup: iam.aiscope/v1alpha2
   kind: GlobalRole
   name: anonymous
 subjects:
-  - apiGroup: iam.aiscope.io/v1alpha2
+  - apiGroup: iam.aiscope/v1alpha2
     kind: Group
     name: system:unauthenticated
 
@@ -1028,11 +1028,11 @@ kind: GlobalRoleBinding
 metadata:
   name: authenticated
 roleRef:
-  apiGroup: iam.aiscope.io/v1alpha2
+  apiGroup: iam.aiscope/v1alpha2
   kind: GlobalRole
   name: authenticated
 subjects:
-  - apiGroup: iam.aiscope.io/v1alpha2
+  - apiGroup: iam.aiscope/v1alpha2
     kind: Group
     name: system:authenticated
 
@@ -1042,14 +1042,14 @@ kind: GlobalRoleBinding
 metadata:
   name: pre-registration
 roleRef:
-  apiGroup: iam.aiscope.io
+  apiGroup: iam.aiscope
   kind: GlobalRole
   name: pre-registration
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
     name: pre-registration
-  - apiGroup: iam.aiscope.io/v1alpha2
+  - apiGroup: iam.aiscope/v1alpha2
     kind: User
     name: system:pre-registration
 
