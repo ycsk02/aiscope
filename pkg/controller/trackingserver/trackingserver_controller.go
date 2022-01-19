@@ -17,6 +17,7 @@ limitations under the License.
 package trackingserver
 
 import (
+	tenantv1alpha2 "aiscope/pkg/apis/tenant/v1alpha2"
 	controllerutils "aiscope/pkg/controller/utils/controller"
 	"aiscope/pkg/utils/sliceutil"
 	"context"
@@ -31,10 +32,15 @@ import (
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
+)
+
+const (
+	controllerName = "trackingserver-controller"
 )
 
 // TrackingServerReconciler reconciles a TrackingServer object
@@ -59,7 +65,7 @@ type TrackingServerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.Logger.WithValues("workspace", req.NamespacedName)
+	logger := r.Logger.WithValues("trackingServer", req.NamespacedName)
 	rootCtx := context.Background()
 
 	trackingServer := &experimentv1alpha2.TrackingServer{}
@@ -78,18 +84,21 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else {
 		if err := r.deleteTrackingServerResource(rootCtx, logger, trackingServer); err != nil {
+			logger.Error(err, "delete trackingserver resource failed")
+			return ctrl.Result{}, err
 		}
 
 		if sliceutil.HasString(trackingServer.ObjectMeta.Finalizers, finalizer) {
 			trackingServer.ObjectMeta.Finalizers = sliceutil.RemoveString(trackingServer.ObjectMeta.Finalizers, func(item string) bool {
 				return item == finalizer
 			})
-			logger.V(4).Info("update workspace")
+			logger.V(4).Info("update trackingServer")
 			if err := r.Update(rootCtx,trackingServer); err != nil {
-				logger.Error(err, "update workspace failed")
+				logger.Error(err, "update trackingServer failed")
 				return ctrl.Result{}, err
 			}
 		}
+
 		return ctrl.Result{}, nil
 	}
 
@@ -237,7 +246,23 @@ func labelsForTrackingServer(name string) map[string]string {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *TrackingServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if r.Client == nil {
+		r.Client = mgr.GetClient()
+	}
+
+	r.Logger = ctrl.Log.WithName("controllers").WithName(controllerName)
+
+	if r.Recorder == nil {
+		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+	}
+	if r.MaxConcurrentReconciles <= 0 {
+		r.MaxConcurrentReconciles = 1
+	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&experimentv1alpha2.TrackingServer{}).
+		Named(controllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: r.MaxConcurrentReconciles,
+		}).
+		For(&tenantv1alpha2.Workspace{}).
 		Complete(r)
 }
