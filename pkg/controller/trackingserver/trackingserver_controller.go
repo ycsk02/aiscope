@@ -84,11 +84,6 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			}
 		}
 	} else {
-		// if err := r.deleteTrackingServerResource(rootCtx, logger, trackingServer); err != nil {
-		// 	logger.Error(err, "delete trackingserver resource failed")
-		// 	return ctrl.Result{}, err
-		// }
-
 		if sliceutil.HasString(trackingServer.ObjectMeta.Finalizers, finalizer) {
 			trackingServer.ObjectMeta.Finalizers = sliceutil.RemoveString(trackingServer.ObjectMeta.Finalizers, func(item string) bool {
 				return item == finalizer
@@ -117,38 +112,6 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	r.Recorder.Event(trackingServer, corev1.EventTypeNormal, controllerutils.SuccessSynced, controllerutils.MessageResourceSynced)
 	return ctrl.Result{}, nil
-}
-
-func (r *TrackingServerReconciler) deleteTrackingServerResource(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
-	deployment := &appsv1.Deployment{}
-	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, deployment); err != nil {
-		if errors.IsNotFound(err) {
-			logger.V(4).Info("related deployment not found", "trackingserver", instance.Name)
-		} else {
-			logger.Error(err, "failed to get related deployment")
-		}
-	} else {
-		if err := r.Delete(ctx, deployment); err != nil {
-			return err
-		}
-		logger.V(4).Info("deployment has been deleted successfully ")
-	}
-
-	service := &corev1.Service{}
-	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, service); err != nil {
-		if errors.IsNotFound(err) {
-			logger.V(4).Info("related service not found", "trackingserver", instance.Name)
-		} else {
-			logger.Error(err, "failed to get related service")
-		}
-	} else {
-		if err := r.Delete(ctx, service); err != nil {
-			return err
-		}
-		logger.V(4).Info("service has been deleted successfully ")
-	}
-
-	return nil
 }
 
 func (r *TrackingServerReconciler) reconcileDeployment(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
