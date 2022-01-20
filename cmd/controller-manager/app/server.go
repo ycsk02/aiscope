@@ -4,6 +4,7 @@ import (
 	"aiscope/cmd/controller-manager/app/options"
 	"aiscope/pkg/apis"
 	"aiscope/pkg/controller/namespace"
+	"aiscope/pkg/controller/trackingserver"
 	"aiscope/pkg/controller/user"
 	"aiscope/pkg/controller/workspace"
 	"aiscope/pkg/controller/workspacerole"
@@ -130,6 +131,11 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 	}
 	if err = userController.SetupWithManager(mgr); err != nil {
 		klog.Fatalf("Unable to create user controller: %v", err)
+	}
+
+	trackingserverReconciler := &trackingserver.TrackingServerReconciler{}
+	if err = trackingserverReconciler.SetupWithManager(mgr); err != nil {
+		klog.Fatalf("Unable to create trackingserver controller: %v", err)
 	}
 
 	if err = addControllers(mgr,

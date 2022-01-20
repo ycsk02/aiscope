@@ -1,6 +1,16 @@
 apiVersion: experiment.aiscope/v1alpha2
 kind: TrackingServer
 metadata:
-  name: trackingserver-sample
+  name: trackingserver
+  namespace: aiscope-devops-platform
 spec:
-  # TODO(user): Add fields here
+  size: 2
+  image: 192.168.0.93/ai/mlflow:1.21.0-21
+  s3_endpoint_url: "http://s3.platform.aiscope.io/"
+  aws_access_key: "mlflow"
+  aws_secret_key: "mlflow1234"
+  artifact_root: "s3://mlflow/"
+  backend_uri: "mysql+pymysql://root:abc@192.168.0.211:3306/mlflow"
+  url: "mlflow.platform.aiscope.io"
+  volumeSize: "50G"
+  storageClassName: "ceph-rbd"
