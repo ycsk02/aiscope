@@ -14,6 +14,7 @@ type AIScopeControllerManagerOptions struct {
 	LdapOptions           *ldapclient.Options
 	LeaderElect           bool
 	LeaderElection        *leaderelection.LeaderElectionConfig
+	IngressController     string
 }
 
 func NewAIScopeControllerManagerOptions() *AIScopeControllerManagerOptions {
@@ -27,6 +28,7 @@ func NewAIScopeControllerManagerOptions() *AIScopeControllerManagerOptions {
 			RetryPeriod:   5 * time.Second,
 		},
 		LeaderElect:         false,
+		IngressController:   "traefik",
 	}
 
 	return s

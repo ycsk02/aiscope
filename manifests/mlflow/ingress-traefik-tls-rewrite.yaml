@@ -1,0 +1,35 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: http-redirect-ingressroute
+  namespace: aiscope-devops-platform
+spec:
+  entryPoints:
+    - websecure
+    - web
+  routes:
+    - match: Host(`mlflow.platform.aiscope.io`) && PathPrefix(`/platform`)
+      kind: Rule
+      services:
+        - name: trackingserver
+          port: server
+      middlewares:
+        - name: platform-stripprefix
+    - kind: Rule
+      match: Host(`mlflow.platform.aiscope.io`) && (PathPrefix(`/static-files`) || PathPrefix(`/ajax-api`))
+      services:
+        - name: trackingserver
+          port: server
+  tls:
+    secretName: mlflow
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: platform-stripprefix
+  namespace: aiscope-devops-platform
+spec:
+  stripPrefix:
+    prefixes:
+      - /platform

@@ -133,7 +133,7 @@ func run(s *options.AIScopeControllerManagerOptions, ctx context.Context) error 
 		klog.Fatalf("Unable to create user controller: %v", err)
 	}
 
-	trackingserverReconciler := &trackingserver.TrackingServerReconciler{}
+	trackingserverReconciler := &trackingserver.TrackingServerReconciler{IngressController: s.IngressController, TraefikClient: kubernetesClient.Traefik()}
 	if err = trackingserverReconciler.SetupWithManager(mgr); err != nil {
 		klog.Fatalf("Unable to create trackingserver controller: %v", err)
 	}

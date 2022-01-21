@@ -2,6 +2,7 @@ package k8s
 
 import (
 	aiscope "aiscope/pkg/client/clientset/versioned"
+	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/generated/clientset/versioned"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
@@ -12,6 +13,7 @@ import (
 type Client interface {
 	Kubernetes() kubernetes.Interface
 	AIScope() aiscope.Interface
+	Traefik() traefik.Interface
 	ApiExtensions() apiextensionsclient.Interface
 	Discovery() discovery.DiscoveryInterface
 	Master() string
@@ -23,6 +25,8 @@ type kubernetesClient struct {
 	k8s kubernetes.Interface
 
 	ai aiscope.Interface
+
+	ingress traefik.Interface
 
 	// discovery client
 	discoveryClient *discovery.DiscoveryClient
@@ -63,6 +67,11 @@ func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
 		return nil, err
 	}
 
+	k.ingress, err = traefik.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &k, nil
 }
 
@@ -90,4 +99,8 @@ func (k *kubernetesClient) Config() *rest.Config {
 
 func (k *kubernetesClient) AIScope() aiscope.Interface {
 	return k.ai
+}
+
+func (k *kubernetesClient) Traefik() traefik.Interface {
+	return k.ingress
 }

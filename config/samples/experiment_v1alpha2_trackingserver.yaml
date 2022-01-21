@@ -11,6 +11,57 @@ spec:
   aws_secret_key: "mlflow1234"
   artifact_root: "s3://mlflow/"
   backend_uri: "mysql+pymysql://root:abc@192.168.0.211:3306/mlflow"
-  url: "mlflow.platform.aiscope.io"
+  url: "https://mlflow.platform.aiscope.io/platform"
   volumeSize: "50G"
   storageClassName: "ceph-rbd"
+  certFile: |
+    -----BEGIN CERTIFICATE-----
+    MIIDdTCCAl2gAwIBAgIUekacMOsjvwjsy+7eQEFPSyQG3KwwDQYJKoZIhvcNAQEL
+    BQAwSjEjMCEGA1UEAwwabWxmbG93LnBsYXRmb3JtLmFpc2NvcGUuaW8xIzAhBgNV
+    BAoMGm1sZmxvdy5wbGF0Zm9ybS5haXNjb3BlLmlvMB4XDTIyMDEyMDEyMDA0OFoX
+    DTIzMDEyMDEyMDA0OFowSjEjMCEGA1UEAwwabWxmbG93LnBsYXRmb3JtLmFpc2Nv
+    cGUuaW8xIzAhBgNVBAoMGm1sZmxvdy5wbGF0Zm9ybS5haXNjb3BlLmlvMIIBIjAN
+    BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm5ipmsir1k1eAsECC80rRgxGbg8Q
+    dBc+fEhtu6DxbKDD2OOsa8VPvls/Aq9/EaU3imouCXZfbUhCSr6L/CwlY8GGiBIB
+    cfJscUrGarIak61mJxS4UVtaKYf9eVhyzFWLCcNfZA2WfPDe2jQjGPOc0Z4cQuI+
+    1A7u7oVYlWUMJ0DfVdXod32NvGr8vzbHFMhvn6nyzFZQbna6BwPF/hL84OeoNv+o
+    wknkRx/Se4psuEs0jh7WaM9QhfHVNG6YzSXoJzwRPFPMmN41Ac0eQcLE9VdM7u/d
+    VhppteZffEEHTifvVW53dq2IzE/TWO5q3+3fTweq25oscubYWQIElob1FQIDAQAB
+    o1MwUTAdBgNVHQ4EFgQURAC2XSoTpHFgdd3S/uBuQr2KudIwHwYDVR0jBBgwFoAU
+    RAC2XSoTpHFgdd3S/uBuQr2KudIwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0B
+    AQsFAAOCAQEALszXkPFtyI0s53c4rXWFJxKlZKZrR2+OTrJDG6wwIB7AGlGuPeDm
+    YrOINqm6Abc16pEyFLrivuFM471mS5zd3pFr725B2j6LR8e4+vUwmNaUTDO0HzOS
+    vpE5bfxHO+9YPuGPfp+rbg9lr6QqeOzBuV4G16b4RIhIou4SIQwjIOyoNlczDNUB
+    qOt4YR9y8lJcHFgyqZWdtouUrBmkRjw3VQrN5tLwc7uYt5dSebQ6qwKf0cMCYA/i
+    oij+SxzMfurUQeyH3sFNLTHiqMdCUMFayr4GM+xTU+Zw1eEgmS1+7TfJSP6EKPzp
+    sqaHacGN85vBjOi66Is+JbAoPrJy0jzluw==
+    -----END CERTIFICATE-----
+  keyFile: |
+    -----BEGIN PRIVATE KEY-----
+    MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCbmKmayKvWTV4C
+    wQILzStGDEZuDxB0Fz58SG27oPFsoMPY46xrxU++Wz8Cr38RpTeKai4Jdl9tSEJK
+    vov8LCVjwYaIEgFx8mxxSsZqshqTrWYnFLhRW1oph/15WHLMVYsJw19kDZZ88N7a
+    NCMY85zRnhxC4j7UDu7uhViVZQwnQN9V1eh3fY28avy/NscUyG+fqfLMVlBudroH
+    A8X+Evzg56g2/6jCSeRHH9J7imy4SzSOHtZoz1CF8dU0bpjNJegnPBE8U8yY3jUB
+    zR5BwsT1V0zu791WGmm15l98QQdOJ+9Vbnd2rYjMT9NY7mrf7d9PB6rbmixy5thZ
+    AgSWhvUVAgMBAAECggEAQAiszBmHtnMynFmIGQk/pN1KYuLqN4yVV5qLJmuOz9C9
+    qNXR0KxsK//rR5Sn68AdwmX+OkCv9w6E0bPncklMvegYEImwdI97F4jZbXGMxHfZ
+    EX5SeJDq4yqnIzhGTldqGAOCj2+UHikW3aAVTaB8SjwSj2gCyUy4Agt4sErcnI5O
+    0PduZaz1p/lDFJBEAq1m76tRoFryzsZdDbgyS+6ZIr8mXrw74m6IKYrhrrcmjcZL
+    cWJpSjH73NhstwEzpaqVdq+i4ti4mQN09/hq+rEmwQVO24lxgJt4qXv/YQVZveUu
+    5Sq5kqSwHwK6L0rwiMoPN7GZ/a70hAURZpPSijPhgQKBgQDKexionUZfUFvL9Q5y
+    D+nVvSPEo9dPpjdKLgLYsG/TSOWhqe5PG6PAQn57JYkl/1z5QGdMFWK5u6/rAk/A
+    4duwzopTe1eX2ASusLxxAbcCQvwF8yKnxSR4ylBOMcH5cg1fjeeJIk3HTxEuGS/A
+    cPsViPostBxJEoyKA3yKK33VoQKBgQDEuR4NNCydK+8xkdSl5ew5r6CaMg7qD9A7
+    6vzr2/wqT9cJY+CuNLxFB4jGSbluY4kROuMIxxi9L34zXPAvh01p5YV3dDOE83V0
+    P/xnLA4jgpp0fPiRHOza4YmpyLqKbRvawDZsz+pMbmay0mizh2v6U27VOmstntmT
+    bWZ8nEZC9QKBgQC/sGHb32kr+wusv0b5vQ8HBpTCKMpB4X4egAi50+9J+41Jy3KM
+    +gHAljLfqt14V5VRcyNX6Dca1xDoT7vpQumVLTPPbMm0OxHTwAXmhlUXkwq9Jzz7
+    z6uDnyT/oiOdX9hBSjqUnSE9OyFsnvOSIGPUM2WExM6ybxkV388bj6kFgQKBgG+X
+    cuyahBREL9M2niHdYzr13WyaqMstXTof+ojwqQJ3d8vj1Df9wi6GL5gLihyMadxU
+    QyVfizEGF9ibB8RuRAOmJyezyuXIFQB0q4D7BKowE92wZnAqsFEZTzX4n5iWfA6C
+    qlzfNFFW7vrRUINGdoHxghWCpfmi+lke3dwh6dlhAoGBALiAsKf6dktr/utuGthg
+    WwYt6ECGQ/0O+yPGtND6kYKC/A50Vg8zUVTzJpmZluAWCoMUcfpY5QqD42fZaQV4
+    iBn2SNmcvduQDkosLo1eZcrZxbHlFkMzkvMh/8aQHQZQokIS6RR3fUiZK7+JV7Op
+    X8sS5WsPy440naXhM+Lk8Y3H
+    -----END PRIVATE KEY-----

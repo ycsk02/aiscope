@@ -37,6 +37,8 @@ type TrackingServerSpec struct {
 	URL                 string      `json:"url"`
 	VolumeSize          string      `json:"volumeSize"`
 	StorageClassName    string      `json:"storageClassName"`
+	CertFile            string      `json:"certFile"`
+	KeyFile             string      `json:"keyFile"`
 }
 
 // TrackingServerStatus defines the observed state of TrackingServer
