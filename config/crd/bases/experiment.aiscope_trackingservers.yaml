@@ -22,7 +22,7 @@ spec:
       type: string
     - jsonPath: .spec.artifact_root
       name: ARTIFACT_ROOT
-      type: boolean
+      type: string
     name: v1alpha2
     schema:
       openAPIV3Schema:
