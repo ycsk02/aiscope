@@ -51,7 +51,11 @@ spec:
                 type: string
               backend_uri:
                 type: string
+              cert:
+                type: string
               image:
+                type: string
+              key:
                 type: string
               s3_endpoint_url:
                 type: string
@@ -71,7 +75,9 @@ spec:
             - aws_access_key
             - aws_secret_key
             - backend_uri
+            - cert
             - image
+            - key
             - s3_endpoint_url
             - size
             - storageClassName

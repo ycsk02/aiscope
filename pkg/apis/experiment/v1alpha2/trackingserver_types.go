@@ -37,8 +37,8 @@ type TrackingServerSpec struct {
 	URL                 string      `json:"url"`
 	VolumeSize          string      `json:"volumeSize"`
 	StorageClassName    string      `json:"storageClassName"`
-	CertFile            string      `json:"certFile"`
-	KeyFile             string      `json:"keyFile"`
+	Cert	            string      `json:"cert"`
+	Key	                string      `json:"key"`
 }
 
 // TrackingServerStatus defines the observed state of TrackingServer
@@ -51,7 +51,7 @@ type TrackingServerStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="S3_ENDPOINT_URL",type="string",JSONPath=".spec.s3_endpoint_url"
-// +kubebuilder:printcolumn:name="ARTIFACT_ROOT",type="boolean",JSONPath=".spec.artifact_root"
+// +kubebuilder:printcolumn:name="ARTIFACT_ROOT",type="string",JSONPath=".spec.artifact_root"
 
 // TrackingServer is the Schema for the trackingservers API
 type TrackingServer struct {

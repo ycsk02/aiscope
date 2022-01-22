@@ -5,16 +5,16 @@ metadata:
   namespace: aiscope-devops-platform
 spec:
   size: 2
-  image: 192.168.0.93/ai/mlflow:1.21.0-21
+  image: mlflow:aiscope
   s3_endpoint_url: "http://s3.platform.aiscope.io/"
   aws_access_key: "mlflow"
   aws_secret_key: "mlflow1234"
   artifact_root: "s3://mlflow/"
-  backend_uri: "mysql+pymysql://root:abc@192.168.0.211:3306/mlflow"
-  url: "https://mlflow.platform.aiscope.io/platform"
+  backend_uri:  "sqlite:////mlflow/mlflow.db" #"mysql+pymysql://root:abc@192.168.0.211:3306/mlflow"
+  url: "https://mlflow.platform.aiscope.io/platform" #"https://mlflow.platform.aiscope.io"
   volumeSize: "50G"
   storageClassName: "ceph-rbd"
-  certFile: |
+  cert: |
     -----BEGIN CERTIFICATE-----
     MIIDdTCCAl2gAwIBAgIUekacMOsjvwjsy+7eQEFPSyQG3KwwDQYJKoZIhvcNAQEL
     BQAwSjEjMCEGA1UEAwwabWxmbG93LnBsYXRmb3JtLmFpc2NvcGUuaW8xIzAhBgNV
@@ -36,7 +36,7 @@ spec:
     oij+SxzMfurUQeyH3sFNLTHiqMdCUMFayr4GM+xTU+Zw1eEgmS1+7TfJSP6EKPzp
     sqaHacGN85vBjOi66Is+JbAoPrJy0jzluw==
     -----END CERTIFICATE-----
-  keyFile: |
+  key: |
     -----BEGIN PRIVATE KEY-----
     MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCbmKmayKvWTV4C
     wQILzStGDEZuDxB0Fz58SG27oPFsoMPY46xrxU++Wz8Cr38RpTeKai4Jdl9tSEJK

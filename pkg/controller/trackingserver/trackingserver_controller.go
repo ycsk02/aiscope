@@ -17,7 +17,6 @@ limitations under the License.
 package trackingserver
 
 import (
-	controllerutils "aiscope/pkg/controller/utils/controller"
 	"aiscope/pkg/utils/sliceutil"
 	"context"
 	"fmt"
@@ -30,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/klog/v2"
 	"net/url"
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,16 +37,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 
 	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
-	networkv1 "k8s.io/api/networking/v1"
-	traefikv1alpha1 "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
-	traefikclient "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/generated/clientset/versioned"
 	"github.com/traefik/traefik/v2/pkg/config/dynamic"
+	traefikclient "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/generated/clientset/versioned"
+	traefikv1alpha1 "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
+	networkv1 "k8s.io/api/networking/v1"
 )
 
 const (
-	controllerName = "trackingserver-controller"
+	successSynced = "Synced"
+	failedSynced  = "FailedSync"
+	// is synced successfully
+	messageResourceSynced = "Trackingserver synced successfully"
+	controllerName        = "trackingserver-controller"
+	finalizer       = "finalizers.aiscope.io/trackingserver"
+	interval        = time.Second
+	timeout         = 15 * time.Second
+	syncFailMessage = "Failed to sync: %s"
 )
 
 // TrackingServerReconciler reconciles a TrackingServer object
@@ -81,8 +90,6 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	finalizer := "finalizers.aiscope.io/trackingserver"
-
 	if trackingServer.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !sliceutil.HasString(trackingServer.ObjectMeta.Finalizers, finalizer) {
 			trackingServer.ObjectMeta.Finalizers = append(trackingServer.ObjectMeta.Finalizers, finalizer)
@@ -106,22 +113,30 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if err := r.reconcileSecret(rootCtx, logger, trackingServer); err != nil {
+		klog.Error(err)
+		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileDeployment(rootCtx, logger, trackingServer); err != nil {
+		klog.Error(err)
+		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileService(rootCtx, logger, trackingServer); err != nil {
+		klog.Error(err)
+		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileIngress(rootCtx, logger, trackingServer); err != nil {
+		klog.Error(err)
+		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
-	r.Recorder.Event(trackingServer, corev1.EventTypeNormal, controllerutils.SuccessSynced, controllerutils.MessageResourceSynced)
+	r.Recorder.Event(trackingServer, corev1.EventTypeNormal, successSynced, messageResourceSynced)
 	return ctrl.Result{}, nil
 }
 
@@ -135,24 +150,24 @@ func (r *TrackingServerReconciler) reconcileDeployment(ctx context.Context, logg
 	currentDeployment := &appsv1.Deployment{}
 	 if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, currentDeployment); err != nil {
 		 if errors.IsNotFound(err) {
-			 logger.V(4).Info("create trackingserver", "trackingserver", instance.Name)
+			 logger.V(4).Info("create trackingserver deployment", "trackingserver", instance.Name)
 			 if err := r.Create(ctx, expectDployment); err != nil {
-				 logger.Error(err, "create trackingserver failed")
+				 logger.Error(err, "create trackingserver deployment  failed")
 				 return err
 			 }
 			 return nil
 		 }
 
-		 logger.Error(err, "get trackingserver failed")
+		 logger.Error(err, "get trackingserver deployment failed")
 		 return err
-	 }
-
-	 if !reflect.DeepEqual(expectDployment.Spec, currentDeployment.Spec) {
-		 currentDeployment.Spec = expectDployment.Spec
-		 logger.V(4).Info("update trackingserver", "trackingserver", instance.Name)
-		 if err := r.Update(ctx, currentDeployment); err != nil {
-			 logger.Error(err, "update trackingserver failed")
-			 return err
+	 } else {
+		 if !reflect.DeepEqual(expectDployment.Spec, currentDeployment.Spec) {
+			 currentDeployment.Spec = expectDployment.Spec
+			 logger.V(4).Info("update trackingserver deployment", "trackingserver", instance.Name)
+			 if err := r.Update(ctx, currentDeployment); err != nil {
+				 logger.Error(err, "update trackingserver deployment failed")
+				 return err
+			 }
 		 }
 	 }
 
@@ -233,24 +248,24 @@ func (r *TrackingServerReconciler) reconcileService(ctx context.Context, logger 
 	currentService := &corev1.Service{}
 	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, currentService); err != nil {
 		if errors.IsNotFound(err) {
-			logger.V(4).Info("create trackingserver", "trackingserver", instance.Name)
+			logger.V(4).Info("create trackingserver service", "trackingserver", instance.Name)
 			if err := r.Create(ctx, expectService); err != nil {
-				logger.Error(err, "create trackingserver failed")
+				logger.Error(err, "create trackingserver service failed")
 				return err
 			}
 			return nil
 		}
 
-		logger.Error(err, "get trackingserver failed")
+		logger.Error(err, "get trackingserver service failed")
 		return err
-	}
-
-	if !reflect.DeepEqual(expectService.Spec, currentService.Spec) {
-		currentService.Spec = expectService.Spec
-		logger.V(4).Info("update trackingserver", "trackingserver", instance.Name)
-		if err := r.Update(ctx, currentService); err != nil {
-			logger.Error(err, "update trackingserver failed")
-			return err
+	} else {
+		if !reflect.DeepEqual(expectService.Spec, currentService.Spec) {
+			currentService.Spec = expectService.Spec
+			logger.V(4).Info("update trackingserver service", "trackingserver", instance.Name)
+			if err := r.Update(ctx, currentService); err != nil {
+				logger.Error(err, "update trackingserver service failed")
+				return err
+			}
 		}
 	}
 
@@ -280,8 +295,12 @@ func newServiceForTrackingServer(instance *experimentv1alpha2.TrackingServer) *c
 	return service
 }
 
+func labelsForTrackingServer(name string) map[string]string {
+	return map[string]string{"app": "trackingserver", "ts_name": name}
+}
+
 func (r *TrackingServerReconciler) reconcileSecret(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
-	if instance.Spec.CertFile == "" || instance.Spec.KeyFile == "" {
+	if instance.Spec.Cert == "" || instance.Spec.Key == "" {
 		return nil
 	}
 
@@ -291,8 +310,8 @@ func (r *TrackingServerReconciler) reconcileSecret(ctx context.Context, logger l
 			Namespace:  instance.Namespace,
 		},
 		Data: map[string][]byte{
-			"tls.crt":  []byte(instance.Spec.CertFile),
-			"tls.key":  []byte(instance.Spec.KeyFile),
+			"tls.crt":  []byte(instance.Spec.Cert),
+			"tls.key":  []byte(instance.Spec.Key),
 		},
 		Type: corev1.SecretTypeTLS,
 	}
@@ -305,24 +324,24 @@ func (r *TrackingServerReconciler) reconcileSecret(ctx context.Context, logger l
 	currentSecret := &corev1.Secret{}
 	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, currentSecret); err != nil {
 		if errors.IsNotFound(err) {
-			logger.V(4).Info("create trackingserver", "trackingserver", instance.Name)
+			logger.V(4).Info("create trackingserver secret", "trackingserver", instance.Name)
 			if err := r.Create(ctx, expectSecret); err != nil {
-				logger.Error(err, "create trackingserver failed")
+				logger.Error(err, "create trackingserver secret failed")
 				return err
 			}
 			return nil
 		}
 
-		logger.Error(err, "get trackingserver failed")
+		logger.Error(err, "get trackingserver secret failed")
 		return err
-	}
-
-	if !reflect.DeepEqual(expectSecret.Data, currentSecret.Data) {
-		currentSecret.Data = expectSecret.Data
-		logger.V(4).Info("update trackingserver", "trackingserver", instance.Name)
-		if err := r.Update(ctx, currentSecret); err != nil {
-			logger.Error(err, "update trackingserver failed")
-			return err
+	} else {
+		if !reflect.DeepEqual(expectSecret.Data, currentSecret.Data) {
+			currentSecret.Data = expectSecret.Data
+			logger.V(4).Info("update trackingserver secret", "trackingserver", instance.Name)
+			if err := r.Update(ctx, currentSecret); err != nil {
+				logger.Error(err, "update trackingserver secret failed")
+				return err
+			}
 		}
 	}
 
@@ -330,68 +349,97 @@ func (r *TrackingServerReconciler) reconcileSecret(ctx context.Context, logger l
 }
 
 func (r *TrackingServerReconciler) reconcileIngress(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
-	parsedUrl, err := url.Parse(instance.Spec.URL)
-	if err != nil {
-		logger.Error(err, "parse url failed")
-		return err
-	}
-
-	if parsedUrl.Path != "" {
-		if err := r.reconcileTraefikIngress(ctx, logger, instance); err != nil {
-
-		}
-	}
-
-	currentSecret := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, currentSecret); err != nil {
+	secret := &corev1.Secret{}
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, secret); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
+		secret = nil
 	}
-
-	expectIngress := newIngressForTrackingServer(instance, parsedUrl)
-	if currentSecret != nil {
-		expectIngress.Spec.TLS = []networkv1.IngressTLS{
-			{
-				SecretName: instance.Name,
-			},
-		}
-		expectIngress.Annotations = r.annotationsForIngress()
-	}
-
-	return nil
-}
-
-func (r *TrackingServerReconciler) annotationsForIngress() map[string]string {
-	annotation := make(map[string]string)
 
 	if r.IngressController == "traefik" {
-		annotation["traefik.ingress.kubernetes.io/router.entrypoints"] = "websecure"
-		annotation["traefik.ingress.kubernetes.io/router.tls"] = "true"
+		if err := r.reconcileTraefikRoute(ctx, logger, instance, secret); err != nil {
+			return err
+		}
+		return nil
 	}
 
-	return annotation
+	if r.IngressController == "nginx" {
+		if err := r.reconcileNginxIngress(ctx, logger, instance, secret); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return nil
 }
 
-func (r *TrackingServerReconciler) reconcileTraefikRoute(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
+func (r *TrackingServerReconciler) reconcileTraefikRoute(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer, secret *corev1.Secret) error {
 	parsedUrl, err := url.Parse(instance.Spec.URL)
 	if err != nil {
 		logger.Error(err, "parse url failed")
 		return err
 	}
 
-	ingressRoute := ingressRouteForTrackingServer(instance, parsedUrl)
-	middleware := middlewareForTrackingServer(instance, parsedUrl)
-	
-	_, err = r.TraefikClient.TraefikV1alpha1().IngressRoutes(instance.Namespace).Create(ctx, ingressRoute, metav1.CreateOptions{})
-	_, err = r.TraefikClient.TraefikV1alpha1().IngressRoutes(instance.Namespace).Update(ctx, ingressRoute, metav1.UpdateOptions{})
+	expectIngressRoute := ingressRouteForTrackingServer(instance, secret, parsedUrl)
+	if err := controllerutil.SetControllerReference(instance, expectIngressRoute, scheme.Scheme); err != nil {
+		logger.Error(err, "set controller reference failed")
+		return err
+	}
+	currentIngressRoute, err := r.TraefikClient.TraefikV1alpha1().IngressRoutes(instance.Namespace).Get(ctx, instance.Name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			_, err = r.TraefikClient.TraefikV1alpha1().IngressRoutes(instance.Namespace).Create(ctx, expectIngressRoute, metav1.CreateOptions{})
+			if err != nil {
+				klog.Error(err)
+				return err
+			}
+		} else {
+			return err
+		}
+	} else {
+		if !reflect.DeepEqual(expectIngressRoute.Spec, currentIngressRoute.Spec) {
+			currentIngressRoute.Spec = expectIngressRoute.Spec
+			_, err = r.TraefikClient.TraefikV1alpha1().IngressRoutes(instance.Namespace).Update(ctx, currentIngressRoute, metav1.UpdateOptions{})
+			if err != nil {
+				klog.Error(err)
+				return err
+			}
+		}
+	}
 
-	_, err = r.TraefikClient.TraefikV1alpha1().Middlewares(instance.Namespace).Create(ctx, middleware, metav1.CreateOptions{})
-	_, err = r.TraefikClient.TraefikV1alpha1().Middlewares(instance.Namespace).Update(ctx, middleware, metav1.UpdateOptions{})
+	expectMiddleware := middlewareForTrackingServer(instance, parsedUrl)
+	if err := controllerutil.SetControllerReference(instance, expectMiddleware, scheme.Scheme); err != nil {
+		logger.Error(err, "set controller reference failed")
+		return err
+	}
+	currentMiddleware, err := r.TraefikClient.TraefikV1alpha1().Middlewares(instance.Namespace).Get(ctx, instance.Name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			_, err = r.TraefikClient.TraefikV1alpha1().Middlewares(instance.Namespace).Create(ctx, expectMiddleware, metav1.CreateOptions{})
+			if err != nil {
+				klog.Error(err)
+				return err
+			}
+		} else {
+			klog.Error(err)
+			return err
+		}
+	} else {
+		if !reflect.DeepEqual(expectMiddleware.Spec, currentMiddleware.Spec) {
+			currentMiddleware.Spec = expectMiddleware.Spec
+			_, err = r.TraefikClient.TraefikV1alpha1().Middlewares(instance.Namespace).Update(ctx, currentMiddleware, metav1.UpdateOptions{})
+			if err != nil {
+				klog.Error(err)
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
-func (r *TrackingServerReconciler) reconcileTraefikIngress(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
+func (r *TrackingServerReconciler) reconcileNginxIngress(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer, secret *corev1.Secret) error {
 
 	parsedUrl, err := url.Parse(instance.Spec.URL)
 	if err != nil {
@@ -406,18 +454,12 @@ func (r *TrackingServerReconciler) reconcileTraefikIngress(ctx context.Context, 
 		}
 	}
 
-	if parsedUrl.Path == "" {
-
-	}
-
-	expectIngress := newIngressForTrackingServer(instance, parsedUrl)
-
+	expectIngress := newIngressForTrackingServer(instance, secret, parsedUrl)
 
 	if err := controllerutil.SetControllerReference(instance, expectIngress, scheme.Scheme); err != nil {
 		logger.Error(err, "set controller reference failed")
 		return err
 	}
-
 
 	currentIngress := &networkv1.Ingress{}
 	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, currentIngress); err != nil {
@@ -432,45 +474,78 @@ func (r *TrackingServerReconciler) reconcileTraefikIngress(ctx context.Context, 
 
 		logger.Error(err, "get trackingserver failed")
 		return err
-	}
-
-	if !reflect.DeepEqual(expectIngress.Spec, currentIngress.Spec) {
-		currentIngress.Spec = expectIngress.Spec
-		logger.V(4).Info("update trackingserver", "trackingserver", instance.Name)
-		if err := r.Update(ctx, currentIngress); err != nil {
-			logger.Error(err, "update trackingserver failed")
-			return err
+	} else {
+		if !reflect.DeepEqual(expectIngress.Spec, currentIngress.Spec) || !reflect.DeepEqual(expectIngress.Annotations, currentIngress.Annotations) {
+			currentIngress.Spec = expectIngress.Spec
+			logger.V(4).Info("update trackingserver", "trackingserver", instance.Name)
+			if err := r.Update(ctx, currentIngress); err != nil {
+				logger.Error(err, "update trackingserver failed")
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func newIngressForTrackingServer(instance *experimentv1alpha2.TrackingServer, parsedUrl *url.URL) *networkv1.Ingress {
+func newIngressForTrackingServer(instance *experimentv1alpha2.TrackingServer, secret *corev1.Secret, parsedUrl *url.URL) *networkv1.Ingress {
 	pathType := networkv1.PathTypeImplementationSpecific
-	return &networkv1.Ingress{
+	ingress := &networkv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       instance.Name,
 			Namespace:  instance.Namespace,
-			// ingress class annotation is deprecated https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
-			// Annotations: map[string]string{"kubernetes.io/ingress.class": "traefik"},
 		},
 		Spec: networkv1.IngressSpec{
 			Rules: []networkv1.IngressRule{
-				{
-					Host:               parsedUrl.Host,
-					IngressRuleValue:   networkv1.IngressRuleValue{
-						HTTP: &networkv1.HTTPIngressRuleValue{
-							Paths: []networkv1.HTTPIngressPath{
-								{
-									Path:   parsedUrl.Path,
-									PathType: &pathType,
-									Backend: networkv1.IngressBackend{
-										Service: &networkv1.IngressServiceBackend{
-											Name: instance.Name,
-											Port: networkv1.ServiceBackendPort{
-												Name: "server",
-											},
+				{},
+			},
+		},
+	}
+
+	if ingress.Annotations == nil {
+		ingress.Annotations = make(map[string]string)
+	}
+
+	if parsedUrl.Path != "" {
+		ingress.Annotations["nginx.ingress.kubernetes.io/rewrite-target"] = "/$2"
+		ingress.Spec.Rules = []networkv1.IngressRule{
+			{
+				Host:               parsedUrl.Host,
+				IngressRuleValue:   networkv1.IngressRuleValue{
+					HTTP: &networkv1.HTTPIngressRuleValue{
+						Paths: []networkv1.HTTPIngressPath{
+							{
+								Path: fmt.Sprintf("%s(/|$)(.*)", parsedUrl.Path),
+								PathType: &pathType,
+								Backend: networkv1.IngressBackend{
+									Service: &networkv1.IngressServiceBackend{
+										Name: instance.Name,
+										Port: networkv1.ServiceBackendPort{
+											Name: "server",
+										},
+									},
+								},
+							},
+							{
+								Path:   "/static-files",
+								PathType: &pathType,
+								Backend: networkv1.IngressBackend{
+									Service: &networkv1.IngressServiceBackend{
+										Name: instance.Name,
+										Port: networkv1.ServiceBackendPort{
+											Name: "server",
+										},
+									},
+								},
+							},
+							{
+								Path:   "/ajax-api",
+								PathType: &pathType,
+								Backend: networkv1.IngressBackend{
+									Service: &networkv1.IngressServiceBackend{
+										Name: instance.Name,
+										Port: networkv1.ServiceBackendPort{
+											Name: "server",
 										},
 									},
 								},
@@ -479,53 +554,112 @@ func newIngressForTrackingServer(instance *experimentv1alpha2.TrackingServer, pa
 					},
 				},
 			},
-		},
+		}
+	} else {
+		ingress.Spec.Rules = []networkv1.IngressRule{
+			{
+				Host:               parsedUrl.Host,
+				IngressRuleValue:   networkv1.IngressRuleValue{
+					HTTP: &networkv1.HTTPIngressRuleValue{
+						Paths: []networkv1.HTTPIngressPath{
+							{
+								Path:   parsedUrl.Path,
+								PathType: &pathType,
+								Backend: networkv1.IngressBackend{
+									Service: &networkv1.IngressServiceBackend{
+										Name: instance.Name,
+										Port: networkv1.ServiceBackendPort{
+											Name: "server",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
 	}
+
+	if secret != nil {
+		fmt.Printf("the secret is not null %v\n", secret)
+		ingress.Spec.TLS = []networkv1.IngressTLS{
+			{
+				Hosts: []string{
+					parsedUrl.Host,
+				},
+				SecretName: instance.Name,
+			},
+		}
+	}
+
+	return ingress
 }
 
-func ingressRouteForTrackingServer(instance *experimentv1alpha2.TrackingServer, parsedUrl *url.URL) *traefikv1alpha1.IngressRoute {
+func ingressRouteForTrackingServer(instance *experimentv1alpha2.TrackingServer, secret *corev1.Secret, parsedUrl *url.URL) *traefikv1alpha1.IngressRoute {
 	ingressRoute := &traefikv1alpha1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       instance.Name,
 			Namespace:  instance.Namespace,
 		},
 		Spec: traefikv1alpha1.IngressRouteSpec{
-			EntryPoints: []string{"websecure","web"},
-			Routes: []traefikv1alpha1.Route{
-				{
-					Match:  fmt.Sprintf("Host(`%s`) && PathPrefix(`/%s`)", parsedUrl.Host, parsedUrl.Path),
-					Kind:   "Rule",
-					Services: []traefikv1alpha1.Service{
-						{
-							LoadBalancerSpec: traefikv1alpha1.LoadBalancerSpec{
-								Name:   instance.Name,
-								Port:   intstr.FromString("server"),
-							},
-						},
-					},
-					Middlewares: []traefikv1alpha1.MiddlewareRef{
-						{
-							Name: instance.Name,
-						},
-					},
-				},
-				{
-					Match:  fmt.Sprintf("Host(`%s`) && (PathPrefix(`/static-files`) || PathPrefix(`/ajax-api`))", parsedUrl.Host),
-					Kind:   "Rule",
-					Services: []traefikv1alpha1.Service{
-						{
-							LoadBalancerSpec: traefikv1alpha1.LoadBalancerSpec{
-								Name:   instance.Name,
-								Port:   intstr.FromString("server"),
-							},
-						},
-					},
-				},
-			},
-			TLS: &traefikv1alpha1.TLS{
-				SecretName: instance.Name,
-			},
+			EntryPoints: []string{"web"},
 		},
+	}
+
+	if secret != nil {
+		ingressRoute.Spec.EntryPoints = []string{"websecure","web"}
+		ingressRoute.Spec.TLS = &traefikv1alpha1.TLS{
+			SecretName: instance.Name,
+		}
+	}
+
+	if parsedUrl.Path == "" {
+		ingressRoute.Spec.Routes = append(ingressRoute.Spec.Routes, traefikv1alpha1.Route{
+			Match:  fmt.Sprintf("Host(`%s`)", parsedUrl.Host),
+			Kind:   "Rule",
+			Services: []traefikv1alpha1.Service{
+				{
+					LoadBalancerSpec: traefikv1alpha1.LoadBalancerSpec{
+						Name:   instance.Name,
+						Port:   intstr.FromString("server"),
+					},
+				},
+			},
+		})
+	} else {
+		ingressRoute.Spec.Routes = append(ingressRoute.Spec.Routes, []traefikv1alpha1.Route{
+			{
+				Match:  fmt.Sprintf("Host(`%s`) && PathPrefix(`%s`)", parsedUrl.Host, parsedUrl.Path),
+				Kind:   "Rule",
+				Services: []traefikv1alpha1.Service{
+					{
+						LoadBalancerSpec: traefikv1alpha1.LoadBalancerSpec{
+							Name:   instance.Name,
+							Port:   intstr.FromString("server"),
+						},
+					},
+				},
+				Middlewares: []traefikv1alpha1.MiddlewareRef{
+					{
+						Name: instance.Name,
+					},
+				},
+			},
+			{
+				Match:  fmt.Sprintf("Host(`%s`) && (PathPrefix(`/static-files`) || PathPrefix(`/ajax-api`))", parsedUrl.Host),
+				Kind:   "Rule",
+				Services: []traefikv1alpha1.Service{
+					{
+						LoadBalancerSpec: traefikv1alpha1.LoadBalancerSpec{
+							Name:   instance.Name,
+							Port:   intstr.FromString("server"),
+						},
+					},
+				},
+			},
+		}...)
 	}
 
 	return ingressRoute
@@ -544,10 +678,6 @@ func middlewareForTrackingServer(instance *experimentv1alpha2.TrackingServer, pa
 		},
 	}
 	return middleware
-}
-
-func labelsForTrackingServer(name string) map[string]string {
-	return map[string]string{"app": "trackingserver", "ts_name": name}
 }
 
 // SetupWithManager sets up the controller with the Manager.

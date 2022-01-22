@@ -28,7 +28,7 @@ func NewAIScopeControllerManagerOptions() *AIScopeControllerManagerOptions {
 			RetryPeriod:   5 * time.Second,
 		},
 		LeaderElect:         false,
-		IngressController:   "traefik",
+		IngressController:   "traefik", // nginx, traefik
 	}
 
 	return s

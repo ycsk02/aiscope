@@ -21,7 +21,7 @@ type Options struct {
 // which host field point to nowhere.
 func NewOptions() *Options {
 	return &Options{
-		Host:            "192.168.10.7:30053",
+		Host:            "ldap.aiscope.io:31675",
 		ManagerDN:       "cn=admin,dc=aiscope,dc=io",
 		ManagerPassword: "adminpassword",
 		UserSearchBase:  "ou=Users,dc=aiscope,dc=io",

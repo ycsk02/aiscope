@@ -10,6 +10,10 @@ kubebuilder create api --group iam --version v1alpha2 --kind WorkspaceRoleBindin
 kubebuilder create api --group iam --version v1alpha2 --kind GlobalRole
 kubebuilder create api --group iam --version v1alpha2 --kind GlobalRoleBinding
 kubebuilder create api --group iam --version v1alpha2 --kind LoginRecord
+kubebuilder create api --group experiment --version v1alpha2 --kind TrackingServer
+kubebuilder create api --group experiment --version v1alpha2 --kind JupyterNotebook
+kubebuilder create api --group experiment --version v1alpha2 --kind CodeServer
+
 go mod tidy
 make generate
 make manifests
