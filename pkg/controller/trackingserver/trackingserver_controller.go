@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	"net/url"
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -114,31 +113,26 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if err := r.reconcilePersistentVolume(rootCtx, logger, trackingServer); err != nil {
-		klog.Error(err)
 		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileSecret(rootCtx, logger, trackingServer); err != nil {
-		klog.Error(err)
 		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileDeployment(rootCtx, logger, trackingServer); err != nil {
-		klog.Error(err)
 		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileService(rootCtx, logger, trackingServer); err != nil {
-		klog.Error(err)
 		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileIngress(rootCtx, logger, trackingServer); err != nil {
-		klog.Error(err)
 		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
 		return reconcile.Result{}, err
 	}
@@ -418,7 +412,7 @@ func (r *TrackingServerReconciler) reconcileTraefikRoute(ctx context.Context, lo
 		if errors.IsNotFound(err) {
 			_, err = r.TraefikClient.TraefikV1alpha1().IngressRoutes(instance.Namespace).Create(ctx, expectIngressRoute, metav1.CreateOptions{})
 			if err != nil {
-				klog.Error(err)
+				logger.Error(err, "create IngressRoute failed")
 				return err
 			}
 		} else {
@@ -429,7 +423,7 @@ func (r *TrackingServerReconciler) reconcileTraefikRoute(ctx context.Context, lo
 			currentIngressRoute.Spec = expectIngressRoute.Spec
 			_, err = r.TraefikClient.TraefikV1alpha1().IngressRoutes(instance.Namespace).Update(ctx, currentIngressRoute, metav1.UpdateOptions{})
 			if err != nil {
-				klog.Error(err)
+				logger.Error(err, "update IngressRoute failed")
 				return err
 			}
 		}
@@ -445,11 +439,11 @@ func (r *TrackingServerReconciler) reconcileTraefikRoute(ctx context.Context, lo
 		if errors.IsNotFound(err) {
 			_, err = r.TraefikClient.TraefikV1alpha1().Middlewares(instance.Namespace).Create(ctx, expectMiddleware, metav1.CreateOptions{})
 			if err != nil {
-				klog.Error(err)
+				logger.Error(err, "create Middlewares failed")
 				return err
 			}
 		} else {
-			klog.Error(err)
+			logger.Error(err, "get Middlewares failed")
 			return err
 		}
 	} else {
@@ -457,7 +451,7 @@ func (r *TrackingServerReconciler) reconcileTraefikRoute(ctx context.Context, lo
 			currentMiddleware.Spec = expectMiddleware.Spec
 			_, err = r.TraefikClient.TraefikV1alpha1().Middlewares(instance.Namespace).Update(ctx, currentMiddleware, metav1.UpdateOptions{})
 			if err != nil {
-				klog.Error(err)
+				logger.Error(err, "update Middlewares failed")
 				return err
 			}
 		}
@@ -713,6 +707,7 @@ func (r *TrackingServerReconciler) reconcilePersistentVolume(ctx context.Context
 
 	expectPVC, err := newPersistentVolumeClaim(instance)
 	if err != nil {
+		logger.Error(err, "new persistent volume claim failed")
 		return err
 	}
 
@@ -748,7 +743,6 @@ func newPersistentVolumeClaim(instance *experimentv1alpha2.TrackingServer) (*cor
 	storageClassName := instance.Spec.StorageClassName
 	pvcQuantity, err := resourcev1.ParseQuantity(instance.Spec.VolumeSize)
 	if err != nil {
-		klog.Error(err)
 		return nil, err
 	}
 	pvc := &corev1.PersistentVolumeClaim{
