@@ -44,6 +44,7 @@ import (
 	traefikclient "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/generated/clientset/versioned"
 	traefikv1alpha1 "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
 	networkv1 "k8s.io/api/networking/v1"
+	resourcev1 "k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
@@ -110,6 +111,12 @@ func (r *TrackingServerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 
 		return ctrl.Result{}, nil
+	}
+
+	if err := r.reconcilePersistentVolume(rootCtx, logger, trackingServer); err != nil {
+		klog.Error(err)
+		r.Recorder.Event(trackingServer, corev1.EventTypeWarning, failedSynced, fmt.Sprintf(syncFailMessage, err))
+		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileSecret(rootCtx, logger, trackingServer); err != nil {
@@ -233,6 +240,26 @@ func newDeploymentForTrackingServer(instance *experimentv1alpha2.TrackingServer)
 				},
 			},
 		},
+	}
+
+	if instance.Spec.VolumeSize != "" && instance.Spec.StorageClassName != "" {
+		deployment.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				Name: "trackingserver-sqllite-data",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: instance.Name,
+					},
+				},
+			},
+		}
+
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+			{
+				Name: "trackingserver-sqllite-data",
+				MountPath: "/mlflow",
+			},
+		}
 	}
 
 	return deployment
@@ -583,7 +610,6 @@ func newIngressForTrackingServer(instance *experimentv1alpha2.TrackingServer, se
 	}
 
 	if secret != nil {
-		fmt.Printf("the secret is not null %v\n", secret)
 		ingress.Spec.TLS = []networkv1.IngressTLS{
 			{
 				Hosts: []string{
@@ -678,6 +704,69 @@ func middlewareForTrackingServer(instance *experimentv1alpha2.TrackingServer, pa
 		},
 	}
 	return middleware
+}
+
+func (r *TrackingServerReconciler) reconcilePersistentVolume(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
+	if instance.Spec.VolumeSize == "" || instance.Spec.StorageClassName == "" {
+		return nil
+	}
+
+	expectPVC, err := newPersistentVolumeClaim(instance)
+	if err != nil {
+		return err
+	}
+
+	if err := controllerutil.SetControllerReference(instance, expectPVC, scheme.Scheme); err != nil {
+		logger.Error(err, "set controller reference failed")
+		return err
+	}
+	currentPVC := &corev1.PersistentVolumeClaim{}
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, currentPVC); err != nil {
+		if errors.IsNotFound(err) {
+			logger.V(4).Info("create trackingserver pvc", "trackingserver", instance.Name)
+			if err := r.Create(ctx, expectPVC); err != nil {
+				logger.Error(err, "create trackingserver pvc failed")
+				return err
+			}
+			return nil
+		}
+		logger.Error(err, "get trackingserver pvc failed")
+		return err
+	} else {
+		if *expectPVC.Spec.StorageClassName != *currentPVC.Spec.StorageClassName ||
+			!reflect.DeepEqual(expectPVC.Spec.Resources.Requests, currentPVC.Spec.Resources.Requests) {
+			err := errors.NewBadRequest("update trackingserver pvc is not allowed")
+			logger.Error(err, "update trackingserver pvc is not supported")
+			return err
+		}
+	}
+
+	return nil
+}
+
+func newPersistentVolumeClaim(instance *experimentv1alpha2.TrackingServer) (*corev1.PersistentVolumeClaim, error) {
+	storageClassName := instance.Spec.StorageClassName
+	pvcQuantity, err := resourcev1.ParseQuantity(instance.Spec.VolumeSize)
+	if err != nil {
+		klog.Error(err)
+		return nil, err
+	}
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: 				instance.Name,
+			Namespace: 			instance.Namespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: 		[]corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			StorageClassName: 	&storageClassName,
+			Resources: 			corev1.ResourceRequirements{
+				Requests: 		corev1.ResourceList{
+					corev1.ResourceStorage: pvcQuantity,
+				},
+			},
+		},
+	}
+	return pvc, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
