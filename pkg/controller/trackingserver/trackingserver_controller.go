@@ -17,6 +17,7 @@ limitations under the License.
 package trackingserver
 
 import (
+	"aiscope/pkg/utils/k8sutil"
 	"aiscope/pkg/utils/sliceutil"
 	"context"
 	"fmt"
@@ -320,8 +321,29 @@ func labelsForTrackingServer(name string) map[string]string {
 	return map[string]string{"app": "trackingserver", "ts_name": name}
 }
 
+func (r *TrackingServerReconciler) deleteSecret(ctx context.Context, instance *experimentv1alpha2.TrackingServer) error {
+	secret := &corev1.Secret{}
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, secret); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	if !k8sutil.IsControlledBy(secret.OwnerReferences, "TrackingServer", instance.Name) {
+		return nil
+	}
+
+	if err := r.Delete(ctx, secret); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *TrackingServerReconciler) reconcileSecret(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
 	if instance.Spec.Cert == "" || instance.Spec.Key == "" {
+		if err := r.deleteSecret(ctx, instance); err != nil {
+			logger.Error(err, "delete secret failed")
+			return err
+		}
 		return nil
 	}
 
@@ -700,8 +722,29 @@ func middlewareForTrackingServer(instance *experimentv1alpha2.TrackingServer, pa
 	return middleware
 }
 
+func (r *TrackingServerReconciler) deletePersistentVolumeClaim(ctx context.Context, instance *experimentv1alpha2.TrackingServer) error {
+	pvc := &corev1.PersistentVolumeClaim{}
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, pvc); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	if !k8sutil.IsControlledBy(pvc.OwnerReferences, "TrackingServer", instance.Name) {
+		return nil
+	}
+
+	if err := r.Delete(ctx, pvc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *TrackingServerReconciler) reconcilePersistentVolume(ctx context.Context, logger logr.Logger, instance *experimentv1alpha2.TrackingServer) error {
 	if instance.Spec.VolumeSize == "" || instance.Spec.StorageClassName == "" {
+		if err := r.deletePersistentVolumeClaim(ctx, instance); err != nil {
+			logger.Error(err, "delete PersistentVolumeClaim failed")
+			return err
+		}
 		return nil
 	}
 

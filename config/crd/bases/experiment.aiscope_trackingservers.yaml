@@ -75,14 +75,10 @@ spec:
             - aws_access_key
             - aws_secret_key
             - backend_uri
-            - cert
             - image
-            - key
             - s3_endpoint_url
             - size
-            - storageClassName
             - url
-            - volumeSize
             type: object
           status:
             description: TrackingServerStatus defines the observed state of TrackingServer

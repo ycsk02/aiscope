@@ -35,10 +35,10 @@ type TrackingServerSpec struct {
 	ARTIFACT_ROOT       string      `json:"artifact_root"`
 	BACKEND_URI         string      `json:"backend_uri"`
 	URL                 string      `json:"url"`
-	VolumeSize          string      `json:"volumeSize"`
-	StorageClassName    string      `json:"storageClassName"`
-	Cert	            string      `json:"cert"`
-	Key	                string      `json:"key"`
+	VolumeSize          string      `json:"volumeSize,omitempty"`
+	StorageClassName    string      `json:"storageClassName,omitempty"`
+	Cert	            string      `json:"cert,omitempty"`
+	Key	                string      `json:"key,omitempty"`
 }
 
 // TrackingServerStatus defines the observed state of TrackingServer
