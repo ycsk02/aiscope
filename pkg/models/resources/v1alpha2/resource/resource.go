@@ -2,10 +2,12 @@ package resource
 
 import (
 	"aiscope/pkg/api"
+	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
 	"aiscope/pkg/apiserver/query"
 	"aiscope/pkg/informers"
 	"aiscope/pkg/models/resources/v1alpha2"
 	"aiscope/pkg/models/resources/v1alpha2/namespace"
+	"aiscope/pkg/models/resources/v1alpha2/trackingserver"
 	"aiscope/pkg/server/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,6 +25,7 @@ func NewResourceGetter(factory informers.InformerFactory) *ResourceGetter {
 	clusterResourceGetters := make(map[schema.GroupVersionResource]v1alpha2.Interface)
 
 	clusterResourceGetters[schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}] = namespace.New(factory.KubernetesSharedInformerFactory())
+	namespacedResourceGetters[experimentv1alpha2.SchemeGroupVersion.WithResource(experimentv1alpha2.ResourcePluralTrackingServer)] = trackingserver.New(factory.AIScopeSharedInformerFactory())
 
 	return &ResourceGetter{
 		namespacedResourceGetters: namespacedResourceGetters,

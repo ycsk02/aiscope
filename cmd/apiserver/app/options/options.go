@@ -3,6 +3,7 @@ package options
 import (
 	"aiscope/pkg/apiserver"
 	apiserverconfig "aiscope/pkg/apiserver/config"
+	"aiscope/pkg/informers"
 	genericoptions "aiscope/pkg/server/options"
 	"aiscope/pkg/simple/client/k8s"
 	"fmt"
@@ -37,6 +38,9 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*apiserver.APIS
 		return nil, err
 	}
 	apiServer.KubernetesClient = kubernetesClient
+
+	informerFactory := informers.NewInformerFactories(kubernetesClient.Kubernetes(), kubernetesClient.AIScope())
+	apiServer.InformerFactory = informerFactory
 
 	server := &http.Server{
 		Addr: fmt.Sprintf(":%d", s.GenericServerRunOptions.InsecurePort),
