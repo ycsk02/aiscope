@@ -11,9 +11,10 @@ import (
 
 type Interface interface {
 	CreateOrUpdateTrackingServer(namespace string, trackingserver *experimentv1alpha2.TrackingServer) (*experimentv1alpha2.TrackingServer, error)
+	PatchTrackingServer(namespace string, trackingserver *experimentv1alpha2.TrackingServer) (*experimentv1alpha2.TrackingServer, error)
 	DeleteTrackingServer(namespace string, name string) error
 	ListTrackingServers(namespace string, queryParam *query.Query) (*api.ListResult, error)
-	DescribeTrackingServer(namespace, trackingserver string) (*experimentv1alpha2.TrackingServer, error)
+	DescribeTrackingServer(namespace, name string) (*experimentv1alpha2.TrackingServer, error)
 }
 
 type Operator struct {

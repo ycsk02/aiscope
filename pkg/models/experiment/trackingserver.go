@@ -5,7 +5,9 @@ import (
 	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
 	"aiscope/pkg/apiserver/query"
 	"context"
+	"encoding/json"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 )
 
@@ -24,6 +26,15 @@ func (o *Operator) CreateOrUpdateTrackingServer(namespace string, trackingserver
 	return created, err
 }
 
+func (o *Operator) PatchTrackingServer(namespace string, trackingserver *experimentv1alpha2.TrackingServer) (*experimentv1alpha2.TrackingServer, error) {
+	data, err := json.Marshal(trackingserver)
+	if err != nil {
+		return nil, err
+	}
+
+	return o.aiclient.ExperimentV1alpha2().TrackingServers(namespace).Patch(context.Background(), trackingserver.Name, types.MergePatchType, data, metav1.PatchOptions{})
+}
+
 func (o *Operator) DeleteTrackingServer(namespace string, name string) error {
 	return o.aiclient.ExperimentV1alpha2().TrackingServers(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 }
@@ -37,8 +48,8 @@ func (o *Operator) ListTrackingServers(namespace string, queryParam *query.Query
 	return result, nil
 }
 
-func (o *Operator) DescribeTrackingServer(namespace, trackingserver string) (*experimentv1alpha2.TrackingServer, error) {
-	obj, err := o.resourceGetter.Get(experimentv1alpha2.ResourcePluralTrackingServer, namespace, trackingserver)
+func (o *Operator) DescribeTrackingServer(namespace, name string) (*experimentv1alpha2.TrackingServer, error) {
+	obj, err := o.resourceGetter.Get(experimentv1alpha2.ResourcePluralTrackingServer, namespace, name)
 	if err != nil {
 		return nil, err
 	}

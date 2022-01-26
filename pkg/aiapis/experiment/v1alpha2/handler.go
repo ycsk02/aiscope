@@ -4,8 +4,8 @@ import (
 	"aiscope/pkg/api"
 	experimentv1alpha2 "aiscope/pkg/apis/experiment/v1alpha2"
 	"aiscope/pkg/apiserver/query"
-	"aiscope/pkg/constants"
 	model "aiscope/pkg/models/experiment"
+	servererr "aiscope/pkg/server/errors"
 	"fmt"
 	"github.com/emicklei/go-restful"
 )
@@ -20,25 +20,68 @@ func newHandler(ep model.Interface) *handler {
 	}
 }
 
-func (h *handler) resolveNamespace(workspace string) string {
-	return fmt.Sprintf(constants.TenantDevopsNamespaceFormat, workspace)
-}
-
-func (h *handler) CreateTrackingServer(req *restful.Request, resp *restful.Response) {
-	namespace := req.PathParameter("namespace")
+func (h *handler) CreateTrackingServer(request *restful.Request, response *restful.Response) {
+	namespace := request.PathParameter("namespace")
 	var trackingserver *experimentv1alpha2.TrackingServer
-	if err := req.ReadEntity(&trackingserver); err != nil {
-		api.HandleBadRequest(resp, req, err)
+	if err := request.ReadEntity(&trackingserver); err != nil {
+		api.HandleBadRequest(response, request, err)
 		return
 	}
 
 	created, err := h.ep.CreateOrUpdateTrackingServer(namespace, trackingserver)
 	if err != nil {
-		api.HandleError(resp, req, err)
+		api.HandleError(response, request, err)
 		return
 	}
 
-	resp.WriteEntity(created)
+	response.WriteEntity(created)
+}
+
+func (h *handler) UpdateTrackingServer(request *restful.Request, response *restful.Response) {
+	namespace := request.PathParameter("namespace")
+	trackingserverName := request.PathParameter("trackingserver")
+
+	var trackingserver experimentv1alpha2.TrackingServer
+	err := request.ReadEntity(&trackingserver)
+	if err != nil {
+		api.HandleBadRequest(response, request, err)
+		return
+	}
+
+	if trackingserverName != trackingserver.Name {
+		err := fmt.Errorf("the name of the object (%s) does not match the name on the URL (%s)", trackingserver.Name, trackingserverName)
+		api.HandleBadRequest(response, request, err)
+		return
+	}
+
+	updated, err := h.ep.CreateOrUpdateTrackingServer(namespace, &trackingserver)
+	if err != nil {
+		api.HandleError(response, request, err)
+		return
+	}
+
+	response.WriteEntity(updated)
+}
+
+func (h *handler) PatchTrackingServer(request *restful.Request, response *restful.Response) {
+	namespace := request.PathParameter("namespace")
+	trackingserverName := request.PathParameter("trackingserver")
+
+	var trackingserver experimentv1alpha2.TrackingServer
+	err := request.ReadEntity(&trackingserver)
+	if err != nil {
+		api.HandleBadRequest(response, request, err)
+		return
+	}
+
+	trackingserver.Name = trackingserverName
+	patched, err := h.ep.PatchTrackingServer(namespace, &trackingserver)
+	if err != nil {
+		api.HandleError(response, request, err)
+		return
+	}
+
+	response.WriteEntity(patched)
 }
 
 func (h *handler) ListTrackingServer(request *restful.Request, response *restful.Response) {
@@ -64,4 +107,17 @@ func (h *handler) DescribeTrackingServer(request *restful.Request, response *res
 	}
 
 	response.WriteEntity(trackingserver)
+}
+
+func (h *handler) DeleteTrackingServer(request *restful.Request, response *restful.Response) {
+	namespace := request.PathParameter("namespace")
+	name := request.PathParameter("trackingserver")
+
+	err := h.ep.DeleteTrackingServer(namespace, name)
+	if err != nil {
+		api.HandleError(response, request, err)
+		return
+	}
+
+	response.WriteEntity(servererr.None)
 }
