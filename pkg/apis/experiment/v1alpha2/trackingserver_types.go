@@ -33,14 +33,14 @@ const (
 type TrackingServerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Size                int32       `json:"size"`
-	Image               string      `json:"image"`
-	S3_ENDPOINT_URL     string      `json:"s3_endpoint_url"`
-	AWS_ACCESS_KEY      string      `json:"aws_access_key"`
-	AWS_SECRET_KEY      string      `json:"aws_secret_key"`
-	ARTIFACT_ROOT       string      `json:"artifact_root"`
-	BACKEND_URI         string      `json:"backend_uri"`
-	URL                 string      `json:"url"`
+	Size                int32       `json:"size,omitempty"`
+	Image               string      `json:"image,omitempty"`
+	S3_ENDPOINT_URL     string      `json:"s3_endpoint_url,omitempty"`
+	AWS_ACCESS_KEY      string      `json:"aws_access_key,omitempty"`
+	AWS_SECRET_KEY      string      `json:"aws_secret_key,omitempty"`
+	ARTIFACT_ROOT       string      `json:"artifact_root,omitempty"`
+	BACKEND_URI         string      `json:"backend_uri,omitempty"`
+	URL                 string      `json:"url,omitempty"`
 	VolumeSize          string      `json:"volumeSize,omitempty"`
 	StorageClassName    string      `json:"storageClassName,omitempty"`
 	Cert	            string      `json:"cert,omitempty"`

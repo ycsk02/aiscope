@@ -111,9 +111,9 @@ func (h *handler) DescribeTrackingServer(request *restful.Request, response *res
 
 func (h *handler) DeleteTrackingServer(request *restful.Request, response *restful.Response) {
 	namespace := request.PathParameter("namespace")
-	name := request.PathParameter("trackingserver")
+	trackingserverName := request.PathParameter("trackingserver")
 
-	err := h.ep.DeleteTrackingServer(namespace, name)
+	err := h.ep.DeleteTrackingServer(namespace, trackingserverName)
 	if err != nil {
 		api.HandleError(response, request, err)
 		return

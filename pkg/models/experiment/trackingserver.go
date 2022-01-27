@@ -35,7 +35,7 @@ func (o *Operator) PatchTrackingServer(namespace string, trackingserver *experim
 	return o.aiclient.ExperimentV1alpha2().TrackingServers(namespace).Patch(context.Background(), trackingserver.Name, types.MergePatchType, data, metav1.PatchOptions{})
 }
 
-func (o *Operator) DeleteTrackingServer(namespace string, name string) error {
+func (o *Operator) DeleteTrackingServer(namespace, name string) error {
 	return o.aiclient.ExperimentV1alpha2().TrackingServers(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 }
 
