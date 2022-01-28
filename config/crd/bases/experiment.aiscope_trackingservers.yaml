@@ -70,15 +70,6 @@ spec:
                 type: string
               volumeSize:
                 type: string
-            required:
-            - artifact_root
-            - aws_access_key
-            - aws_secret_key
-            - backend_uri
-            - image
-            - s3_endpoint_url
-            - size
-            - url
             type: object
           status:
             description: TrackingServerStatus defines the observed state of TrackingServer

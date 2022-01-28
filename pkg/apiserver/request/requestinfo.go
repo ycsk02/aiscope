@@ -29,7 +29,7 @@ var specialVerbs = sets.NewString("proxy", "watch")
 type RequestInfo struct {
 	*k8srequest.RequestInfo
 
-	// IsKubernetesRequest indicates whether or not the request should be handled by kubernetes or kubesphere
+	// IsKubernetesRequest indicates whether or not the request should be handled by kubernetes or aiscope
 	IsKubernetesRequest bool
 
 	// Workspace of requested resource, for non-workspaced resources, this may be empty

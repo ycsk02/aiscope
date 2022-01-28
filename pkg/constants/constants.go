@@ -14,6 +14,7 @@ const (
 
 	WorkspaceTag     = "Workspace"
 	NamespaceTag     = "Namespace"
+	AuthenticationTag = "Authentication"
 
 	ExperimentTrackingServerTag       = "Tracking Server"
 )

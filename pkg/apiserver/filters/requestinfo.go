@@ -12,16 +12,16 @@ import (
 
 func WithRequestInfo(handler http.Handler, resolver request.RequestInfoResolver) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// KubeSphere supports kube-apiserver proxy requests in multicluster mode. But kube-apiserver
+		// AIScope supports kube-apiserver proxy requests in multicluster mode. But kube-apiserver
 		// stripped all authorization headers. Use custom header to carry token to avoid losing authentication token.
 		// We may need a better way. See issue below.
 		// https://github.com/kubernetes/kubernetes/issues/38775#issuecomment-277915961
 		authorization := req.Header.Get("Authorization")
 		if len(authorization) == 0 {
-			xAuthorization := req.Header.Get("X-KubeSphere-Authorization")
+			xAuthorization := req.Header.Get("X-AIScope-Authorization")
 			if len(xAuthorization) != 0 {
 				req.Header.Set("Authorization", xAuthorization)
-				req.Header.Del("X-KubeSphere-Authorization")
+				req.Header.Del("X-AIScope-Authorization")
 			}
 		}
 
@@ -37,9 +37,9 @@ func WithRequestInfo(handler http.Handler, resolver request.RequestInfoResolver)
 		// tracking this, like https://github.com/kubernetes/kubernetes/issues/89360. Also there is a promising
 		// PR aim to fix this, but it's unlikely it will get merged soon. So here we are again. Put raw query
 		// string in Header and extract it on member cluster.
-		if rawQuery := req.Header.Get("X-KubeSphere-Rawquery"); len(rawQuery) != 0 && len(req.URL.RawQuery) == 0 {
+		if rawQuery := req.Header.Get("X-AIScope-Rawquery"); len(rawQuery) != 0 && len(req.URL.RawQuery) == 0 {
 			req.URL.RawQuery = rawQuery
-			req.Header.Del("X-KubeSphere-Rawquery")
+			req.Header.Del("X-AIScope-Rawquery")
 		}
 
 		ctx := req.Context()

@@ -43,6 +43,10 @@ func HandleForbidden(response *restful.Response, req *restful.Request, err error
 	handle(http.StatusForbidden, response, req, err)
 }
 
+func HandleUnauthorized(response *restful.Response, req *restful.Request, err error) {
+	handle(http.StatusUnauthorized, response, req, err)
+}
+
 func HandleInternalError(response *restful.Response, req *restful.Request, err error) {
 	handle(http.StatusInternalServerError, response, req, err)
 }

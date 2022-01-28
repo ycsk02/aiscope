@@ -51,4 +51,8 @@ func (f *informerFactories) Start(stopCh <-chan struct{}) {
 	if f.informerFactory != nil {
 		f.informerFactory.Start(stopCh)
 	}
+
+	if f.aiInformerFactory != nil {
+		f.aiInformerFactory.Start(stopCh)
+	}
 }

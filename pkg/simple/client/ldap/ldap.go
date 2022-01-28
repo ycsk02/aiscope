@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-ldap/ldap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
 

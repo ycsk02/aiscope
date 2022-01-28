@@ -26,6 +26,16 @@ import (
 const (
 	LastPasswordChangeTimeAnnotation      = "iam.aiscope.io/last-password-change-time"
 	IdentifyProviderLabel                 = "iam.aiscope.io/identify-provider"
+	OriginUIDLabel                        = "iam.aiscope.io/origin-uid"
+	FieldEmail                            = "email"
+	ExtraEmail                            = FieldEmail
+	ExtraIdentityProvider                 = "idp"
+	ExtraUID                              = "uid"
+	ExtraUsername                         = "username"
+	ExtraDisplayName                      = "displayName"
+	ExtraUninitialized                    = "uninitialized"
+	PreRegistrationUser                   = "system:pre-registration"
+	PreRegistrationUserGroup              = "pre-registration"
 )
 
 // UserSpec defines the desired state of User
