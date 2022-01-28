@@ -2,20 +2,27 @@ package oauth
 
 import (
 	"aiscope/pkg/api"
+	"aiscope/pkg/apiserver/authentication"
 	"aiscope/pkg/apiserver/authentication/oauth"
 	"aiscope/pkg/constants"
+	"aiscope/pkg/models/auth"
+	"aiscope/pkg/models/iam/im"
 	"github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
 	"net/http"
 )
 
-func AddToContainer(container *restful.Container) error {
+func AddToContainer(container *restful.Container, im im.IdentityManagementInterface,
+	tokenOperator auth.TokenManagementInterface,
+	oauth2Authenticator auth.OAuthAuthenticator,
+	loginRecorder auth.LoginRecorder,
+	options *authentication.Options) error {
 	ws := &restful.WebService{}
 	ws.Path("/oauth").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
-	handler := newHandler()
+	handler := newHandler(tokenOperator, oauth2Authenticator, loginRecorder, options)
 
 	ws.Route(ws.GET("/callback/{callback}").
 		Doc("OAuth callback API, the path param callback is config by identity provider").

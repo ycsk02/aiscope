@@ -3,14 +3,18 @@ package apiserver
 import (
 	experimentapi "aiscope/pkg/aiapis/experiment/v1alpha2"
 	iamapi "aiscope/pkg/aiapis/iam/v1alpha2"
+	"aiscope/pkg/aiapis/oauth"
 	tenantapi "aiscope/pkg/aiapis/tenant/v1alpha2"
 	"aiscope/pkg/aiapis/version"
+	"aiscope/pkg/apiserver/authentication/token"
 	apiserverconfig "aiscope/pkg/apiserver/config"
 	"aiscope/pkg/apiserver/filters"
 	"aiscope/pkg/apiserver/request"
 	"aiscope/pkg/informers"
+	"aiscope/pkg/models/auth"
 	"aiscope/pkg/models/experiment"
 	"aiscope/pkg/models/iam/im"
+	"aiscope/pkg/simple/client/cache"
 	"aiscope/pkg/simple/client/k8s"
 	"context"
 	"github.com/emicklei/go-restful"
@@ -29,10 +33,15 @@ type APIServer struct {
 
 	Config *apiserverconfig.Config
 
+	CacheClient cache.Interface
+
 	// webservice container, where all webservice defines
 	container *restful.Container
 
 	KubernetesClient k8s.Client
+
+	// entity that issues tokens
+	Issuer token.Issuer
 
 	InformerFactory informers.InformerFactory
 }
@@ -63,8 +72,14 @@ func (s *APIServer) installAIscopeAPIs() {
 
 	urlruntime.Must(iamapi.AddToContainer(s.container, imOperator))
 	urlruntime.Must(experimentapi.AddToContainer(s.container, epOperator))
-
 	urlruntime.Must(tenantapi.AddToContainer(s.container, s.KubernetesClient.AIScope(), s.KubernetesClient.Kubernetes()))
+
+	userLister := s.InformerFactory.AIScopeSharedInformerFactory().Iam().V1alpha2().Users().Lister()
+	urlruntime.Must(oauth.AddToContainer(s.container, imOperator,
+		auth.NewTokenOperator(s.CacheClient, s.Issuer, s.Config.AuthenticationOptions),
+		auth.NewOAuthAuthenticator(s.KubernetesClient.AIScope(), userLister, s.Config.AuthenticationOptions),
+		auth.NewLoginRecorder(s.KubernetesClient.AIScope(), userLister),
+		s.Config.AuthenticationOptions))
 }
 
 func (s *APIServer) Run(ctx context.Context) (err error) {

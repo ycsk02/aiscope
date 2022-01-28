@@ -2,9 +2,9 @@ package auth
 
 import (
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
+	"aiscope/pkg/apiserver/authentication"
 	"aiscope/pkg/apiserver/authentication/identityprovider"
 	"aiscope/pkg/apiserver/authentication/oauth"
-	"aiscope/pkg/authentication"
 	aiscope "aiscope/pkg/client/clientset/versioned"
 	iamv1alpha2listers "aiscope/pkg/client/listers/iam/v1alpha2"
 	"context"

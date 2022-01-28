@@ -3,11 +3,12 @@ package oauth
 import (
 	"aiscope/pkg/api"
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
+	"aiscope/pkg/apiserver/authentication"
 	"aiscope/pkg/apiserver/authentication/oauth"
 	"aiscope/pkg/apiserver/authentication/token"
 	"aiscope/pkg/apiserver/request"
-	"aiscope/pkg/authentication"
 	"aiscope/pkg/models/auth"
+	"aiscope/pkg/models/iam/im"
 	"fmt"
 	"github.com/emicklei/go-restful"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,6 +18,7 @@ import (
 )
 
 type handler struct {
+	im 					  im.IdentityManagementInterface
 	oauthAuthenticator    auth.OAuthAuthenticator
 	tokenOperator         auth.TokenManagementInterface
 	loginRecorder         auth.LoginRecorder

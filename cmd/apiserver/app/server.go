@@ -2,13 +2,25 @@ package app
 
 import (
 	"aiscope/cmd/apiserver/app/options"
+	apiserverconfig "aiscope/pkg/apiserver/config"
 	"context"
 	"github.com/spf13/cobra"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func NewAPIServerCommand() *cobra.Command {
 	s := options.NewServerRunOptions()
+
+	conf, err := apiserverconfig.TryLoadFromDisk()
+	if err == nil {
+		s = &options.ServerRunOptions{
+			GenericServerRunOptions: s.GenericServerRunOptions,
+			Config:                  conf,
+		}
+	} else {
+		klog.Fatal("Failed to load configuration from disk", err)
+	}
 
 	cmd := &cobra.Command{
 		Use: "apiserver",

@@ -23,7 +23,7 @@ spec:
     spec:
       serviceAccountName: dex # This is created below
       containers:
-        - image: ghcr.io/dexidp/dex:v2.30.0
+        - image: dexidp/dex:v2.30.0
           name: dex
           command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
 
@@ -72,7 +72,7 @@ metadata:
   namespace: dex
 data:
   config.yaml: |
-    issuer: https://dex.example.com:32000
+    issuer: https://dex.aiscope.io
     storage:
       type: kubernetes
       config:

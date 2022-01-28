@@ -64,7 +64,7 @@ func (l *loginRecorder) RecordLogin(username string, loginType iamv1alpha2.Login
 		loginEntry.Spec.Reason = authErr.Error()
 	}
 
-	_, err = l.ksClient.IamV1alpha2().LoginRecords().Create(context.Background(), loginEntry, metav1.CreateOptions{})
+	_, err = l.aiClient.IamV1alpha2().LoginRecords().Create(context.Background(), loginEntry, metav1.CreateOptions{})
 	if err != nil {
 		klog.Error(err)
 		return err
