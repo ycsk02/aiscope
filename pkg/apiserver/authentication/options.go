@@ -8,6 +8,7 @@ import (
 
 	"aiscope/pkg/apiserver/authentication/identityprovider"
 	_ "aiscope/pkg/apiserver/authentication/identityprovider/ldap"
+	_ "aiscope/pkg/apiserver/authentication/identityprovider/oidc"
 	"aiscope/pkg/apiserver/authentication/oauth"
 )
 

@@ -5,6 +5,7 @@ import (
 	apiserverconfig "aiscope/pkg/apiserver/config"
 	"context"
 	"github.com/spf13/cobra"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -26,6 +27,9 @@ func NewAPIServerCommand() *cobra.Command {
 		Use: "apiserver",
 		Long: `The API server`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if errs := s.Validate(); len(errs) != 0 {
+				return utilerrors.NewAggregate(errs)
+			}
 			return Run(s, signals.SetupSignalHandler())
 		},
 		SilenceUsage: true,
