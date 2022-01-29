@@ -34,13 +34,15 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/dex/cfg
-            - name: tls
-              mountPath: /etc/dex/tls
+#            - name: tls
+#              mountPath: /etc/dex/tls
+#            - name: ca
+#              mountPath: /etc/ssl/certs/
           readinessProbe:
             httpGet:
               path: /healthz
               port: 5556
-              scheme: HTTPS
+              scheme: HTTP
       volumes:
         - name: config
           configMap:
@@ -48,9 +50,12 @@ spec:
             items:
               - key: config.yaml
                 path: config.yaml
-        - name: tls
-          secret:
-            secretName: dex.aiscope.io.tls
+#        - name: tls
+#          secret:
+#            secretName: dex.aiscope.io.tls
+#        - name: ca
+#          secret:
+#            secretName: dex.aiscope.io.ca
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -59,21 +64,21 @@ metadata:
   namespace: dex
 data:
   config.yaml: |
-    issuer: https://dex.aiscope.io:32000
+    issuer: http://dex.aiscope.io:32000
     storage:
       type: kubernetes
       config:
         inCluster: true
     web:
-      https: 0.0.0.0:5556
-      tlsCert: /etc/dex/tls/tls.crt
-      tlsKey: /etc/dex/tls/tls.key
+      http: 0.0.0.0:5556
+      # tlsCert: /etc/dex/tls/tls.crt
+      # tlsKey: /etc/dex/tls/tls.key
     connectors:
     - type: ldap
       id: ldap
       name: "LDAP"
       config:
-        host: ldap.aiscope.io:31675
+        host: openldap.ldap
         startTLS: false
         insecureNoSSL: true
         insecureSkipVerify: true
@@ -111,7 +116,7 @@ data:
     staticClients:
     - id: aiscope
       redirectURIs:
-      - 'http://api.aiscope.io/oauth/callback/dex'
+      - 'http://api.aiscope.io:9090/oauth/callback/dex'
       name: 'aiscope'
       secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 
