@@ -1,7 +1,7 @@
 package options
 
 import (
-	"aiscope/pkg/authentication"
+	"aiscope/pkg/apiserver/authentication"
 	"aiscope/pkg/simple/client/k8s"
 	ldapclient "aiscope/pkg/simple/client/ldap"
 	"k8s.io/client-go/tools/leaderelection"

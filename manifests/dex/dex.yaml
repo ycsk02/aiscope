@@ -83,14 +83,14 @@ data:
         insecureNoSSL: true
         insecureSkipVerify: true
         bindDN: cn=admin,dc=aiscope,dc=io
-        bindPW: admin
+        bindPW: adminpassword
 
         usernamePrompt: Email Address
 
         userSearch:
           baseDN: ou=Users,dc=aiscope,dc=io
           filter: "(objectClass=person)"
-          username: mail
+          username: uid
           # "DN" (case sensitive) is a special attribute name. It indicates that
           # this value should be taken from the entity's DN not an attribute on
           # the entity.

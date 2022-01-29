@@ -1,7 +1,7 @@
 package app
 
 import (
-	"aiscope/pkg/authentication"
+	"aiscope/pkg/apiserver/authentication"
 	"aiscope/pkg/controller/certificatesigningrequest"
 	"aiscope/pkg/controller/clusterrolebinding"
 	"aiscope/pkg/controller/globalrole"
