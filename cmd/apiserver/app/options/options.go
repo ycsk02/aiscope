@@ -2,6 +2,7 @@ package options
 
 import (
 	"aiscope/pkg/apiserver"
+	"aiscope/pkg/apiserver/authentication/token"
 	apiserverconfig "aiscope/pkg/apiserver/config"
 	"aiscope/pkg/informers"
 	genericoptions "aiscope/pkg/server/options"
@@ -61,6 +62,11 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*apiserver.APIS
 		klog.Warning("apiserver starts without redis provided, it will use in memory cache. " +
 			"This may cause inconsistencies when running apiserver with multiple replicas.")
 		apiServer.CacheClient = cache.NewSimpleCache()
+	}
+
+	apiServer.Issuer, err = token.NewIssuer(s.AuthenticationOptions)
+	if err != nil {
+		klog.Fatalf("unable to create issuer: %v", err)
 	}
 
 	server := &http.Server{

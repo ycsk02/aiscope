@@ -36,6 +36,20 @@ const (
 	ExtraUninitialized                    = "uninitialized"
 	PreRegistrationUser                   = "system:pre-registration"
 	PreRegistrationUserGroup              = "pre-registration"
+	UninitializedAnnotation               = "iam.aiscope.io/uninitialized"
+	ScopeWorkspace                        = "workspace"
+	ScopeCluster                          = "cluster"
+	ScopeNamespace                        = "namespace"
+	ScopeDevOps                           = "devops"
+
+	AggregationRolesAnnotation            = "iam.aiscope.io/aggregation-roles"
+	GlobalRoleAnnotation                  = "iam.aiscope.io/globalrole"
+	WorkspaceRoleAnnotation               = "iam.aiscope.io/workspacerole"
+	ClusterRoleAnnotation                 = "iam.aiscope.io/clusterrole"
+
+	InGroup                               = "ingroup"
+	NotInGroup                            = "notingroup"
+	RoleAnnotation                        = "iam.aiscope.io/role"
 )
 
 // UserSpec defines the desired state of User
@@ -90,7 +104,6 @@ type UserStatus struct {
 // +genclient
 // +genclient:nonNamespaced
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
 
 // User is the Schema for the users API
 // +kubebuilder:printcolumn:name="Email",type="string",JSONPath=".spec.email"

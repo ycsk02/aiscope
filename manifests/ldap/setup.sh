@@ -17,3 +17,15 @@ kubectl -n ldap exec $LDAP_POD -- \
 
 kubectl -n ldap exec $LDAP_POD -- \
     ldapsearch -LLL -x -H ldap://localhost:389 -D "cn=admin,dc=aiscope,dc=io" -w adminpassword -b "ou=Users,dc=aiscope,dc=io" dn
+
+
+cat << EOF > sukai.ldif
+dn: uid=sukai,ou=Users,dc=aiscope,dc=io
+objectClass: inetOrgPerson
+objectClass: top
+sn: sukai
+cn: sukai
+uid: sukai
+mail: ycsk02@hotmail.com
+userPassword: 123456
+EOF

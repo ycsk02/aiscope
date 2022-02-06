@@ -19,3 +19,34 @@ authentication:
       - name: dex
         type: OIDCIdentityProvider
         mappingMethod: auto
+        disableLoginConfirmation: true
+        provider:
+          issuer: "http://dex.aiscope.io:32000"
+          clientID: "aiscope"
+          clientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0"
+          redirectURL: "http://api.aiscope.io:9090/oauth/callback/dex"
+          insecureSkipVerify: true
+          getUserInfo: true
+          endpoint:
+            authURL: "http://dex.aiscope.io:32000/authorize"
+            tokenURL: "http://dex.aiscope.io:32000/token"
+            userInfoURL: "http://dex.aiscope.io:32000/userinfo"
+            jwksURL: "http://dex.aiscope.io:32000/keys"
+            endSessionURL: "http://dex.aiscope.io:32000/endsession"
+      - name: ldap
+        type: LDAPIdentityProvider
+        mappingMethod: auto
+        disableLoginConfirmation: true
+        provider:
+          host: "ldap.aiscope.io:31675"
+          managerDN: "cn=admin,dc=aiscope,dc=io"
+          managerPassword: "adminpassword"
+          userSearchBase: "ou=Users,dc=aiscope,dc=io"
+          groupSearchBase: "ou=Groups,dc=aiscope,dc=io"
+          startTLS: false
+          insecureSkipVerify: true
+    clients:
+      - name: aiscope
+        secret: aiscope
+
+

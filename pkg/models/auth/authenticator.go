@@ -15,6 +15,12 @@ import (
 	"strings"
 )
 
+// PasswordAuthenticator is an interface implemented by authenticator which take a
+// username and password.
+type PasswordAuthenticator interface {
+	Authenticate(ctx context.Context, username, password string) (authuser.Info, string, error)
+}
+
 type OAuthAuthenticator interface {
 	Authenticate(ctx context.Context, provider string, req *http.Request) (authuser.Info, string, error)
 }

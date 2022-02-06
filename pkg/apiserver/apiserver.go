@@ -6,6 +6,11 @@ import (
 	"aiscope/pkg/aiapis/oauth"
 	tenantapi "aiscope/pkg/aiapis/tenant/v1alpha2"
 	"aiscope/pkg/aiapis/version"
+	"aiscope/pkg/apiserver/authentication/authenticators/basic"
+	"aiscope/pkg/apiserver/authentication/authenticators/jwt"
+	"aiscope/pkg/apiserver/authentication/request/anonymous"
+	"aiscope/pkg/apiserver/authentication/request/basictoken"
+	"aiscope/pkg/apiserver/authentication/request/bearertoken"
 	"aiscope/pkg/apiserver/authentication/token"
 	apiserverconfig "aiscope/pkg/apiserver/config"
 	"aiscope/pkg/apiserver/filters"
@@ -21,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	urlruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	unionauth "k8s.io/apiserver/pkg/authentication/request/union"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog/v2"
 	"net/http"
@@ -78,6 +84,7 @@ func (s *APIServer) installAIscopeAPIs() {
 	urlruntime.Must(oauth.AddToContainer(s.container, imOperator,
 		auth.NewTokenOperator(s.CacheClient, s.Issuer, s.Config.AuthenticationOptions),
 		auth.NewOAuthAuthenticator(s.KubernetesClient.AIScope(), userLister, s.Config.AuthenticationOptions),
+		auth.NewPasswordAuthenticator(s.KubernetesClient.AIScope(), userLister, s.Config.AuthenticationOptions),
 		auth.NewLoginRecorder(s.KubernetesClient.AIScope(), userLister),
 		s.Config.AuthenticationOptions))
 }
@@ -165,6 +172,20 @@ func (s *APIServer) buildHandlerChain(stopCh <-chan struct{}) {
 
 	handler := s.Server.Handler
 	handler = filters.WithKubeAPIServer(handler, s.KubernetesClient.Config(), &errorResponder{})
+
+	userLister := s.InformerFactory.AIScopeSharedInformerFactory().Iam().V1alpha2().Users().Lister()
+	loginRecorder := auth.NewLoginRecorder(s.KubernetesClient.AIScope(), userLister)
+
+	authn := unionauth.New(anonymous.NewAuthenticator(),
+		basictoken.New(basic.NewBasicAuthenticator(auth.NewPasswordAuthenticator(
+			s.KubernetesClient.AIScope(),
+			userLister,
+			s.Config.AuthenticationOptions),
+			loginRecorder)),
+		bearertoken.New(jwt.NewTokenAuthenticator(
+			auth.NewTokenOperator(s.CacheClient, s.Issuer, s.Config.AuthenticationOptions),
+			userLister)))
+	handler = filters.WithAuthentication(handler, authn)
 
 	handler = filters.WithRequestInfo(handler, requestInfoResolver)
 

@@ -204,6 +204,15 @@ type Client struct {
 	AccessTokenInactivityTimeout *time.Duration `json:"accessTokenInactivityTimeout,omitempty" yaml:"accessTokenInactivityTimeout,omitempty"`
 }
 
+func (o *Options) OAuthClient(name string) (Client, error) {
+	for _, found := range o.Clients {
+		if found.Name == name {
+			return found, nil
+		}
+	}
+	return Client{}, ErrorClientNotFound
+}
+
 func (o *Options) IdentityProviderOptions(name string) (*IdentityProviderOptions, error) {
 	for _, found := range o.IdentityProviders {
 		if found.Name == name {

@@ -1,0 +1,9 @@
+dn: uid=sukai,ou=Users,dc=aiscope,dc=io
+objectClass: inetOrgPerson
+objectClass: top
+sn: sukai
+cn: sukai
+uid: sukai
+mail: ycsk02@hotmail.com
+userPassword: 123456
+

@@ -252,6 +252,7 @@ func (r *Reconciler) syncUserStatus(ctx context.Context, user *iamv1alpha2.User)
 	// becomes active after password encrypted
 	if isEncrypted(user.Spec.EncryptedPassword) {
 		if user.Status.State == nil || *user.Status.State == iamv1alpha2.UserDisabled {
+			fmt.Printf("user status state\n")
 			active := iamv1alpha2.UserActive
 			user.Status = iamv1alpha2.UserStatus{
 				State:              &active,

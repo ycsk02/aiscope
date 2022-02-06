@@ -5,11 +5,12 @@ metadata:
   labels:
     app.kubernetes.io/name: openldap
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - name: tcp-ldap
       port: 389
       targetPort: tcp-ldap
+      nodePort: 31675
   selector:
     app.kubernetes.io/name: openldap
 ---

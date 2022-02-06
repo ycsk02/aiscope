@@ -8,7 +8,7 @@ const (
 
 	CreatorAnnotationKey              = "aiscope.io/creator"
 	AIScopeCreator                    = "aiscope"
-
+	AdminUserName                 	  = "admin"
 	UserTag           = "User"
 	GroupTag          = "Group"
 
