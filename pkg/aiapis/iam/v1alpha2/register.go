@@ -23,6 +23,12 @@ func AddToContainer(container *restful.Container, im im.IdentityManagementInterf
 		Reads(iamv1alpha2.User{}).
 		Metadata(restfulspec.KeyOpenAPITags, []string{constants.UserTag}))
 
+	ws.Route(ws.GET("/users").
+		To(handler.ListUsers).
+		Doc("List all users.").
+		Returns(http.StatusOK, api.StatusOK, api.ListResult{Items: []interface{}{iamv1alpha2.User{}}}).
+		Metadata(restfulspec.KeyOpenAPITags, []string{constants.UserTag}))
+
 	container.Add(ws)
 	return nil
 }

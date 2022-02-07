@@ -3,6 +3,7 @@ package v1alpha2
 import (
 	"aiscope/pkg/api"
 	iamv1alpha2 "aiscope/pkg/apis/iam/v1alpha2"
+	"aiscope/pkg/apiserver/query"
 	"aiscope/pkg/models/iam/im"
 	"github.com/emicklei/go-restful"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -56,4 +57,36 @@ func (h *iamHandler) CreateUser(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(created)
 }
 
+
+func (h *iamHandler) ListUsers(request *restful.Request, response *restful.Response) {
+	queryParam := query.ParseQueryParameter(request)
+	result, err := h.im.ListUsers(queryParam)
+	if err != nil {
+		api.HandleInternalError(response, request, err)
+		return
+	}
+	// for i, item := range result.Items {
+	// 	user := item.(*iamv1alpha2.User)
+	// 	user = user.DeepCopy()
+	// 	globalRole, err := h.im.GetGlobalRoleOfUser(user.Name)
+	// 	// ignore not found error
+	// 	if err != nil && !errors.IsNotFound(err) {
+	// 		api.HandleInternalError(response, request, err)
+	// 		return
+	// 	}
+	// 	if globalRole != nil {
+	// 		user = appendGlobalRoleAnnotation(user, globalRole.Name)
+	// 	}
+	// 	result.Items[i] = user
+	// }
+	response.WriteEntity(result)
+}
+
+func appendGlobalRoleAnnotation(user *iamv1alpha2.User, globalRole string) *iamv1alpha2.User {
+	if user.Annotations == nil {
+		user.Annotations = make(map[string]string, 0)
+	}
+	user.Annotations[iamv1alpha2.GlobalRoleAnnotation] = globalRole
+	return user
+}
 

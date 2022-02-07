@@ -19,6 +19,8 @@ import (
 	"aiscope/pkg/models/auth"
 	"aiscope/pkg/models/experiment"
 	"aiscope/pkg/models/iam/im"
+	"aiscope/pkg/models/resources/v1alpha2/loginrecord"
+	"aiscope/pkg/models/resources/v1alpha2/user"
 	"aiscope/pkg/simple/client/cache"
 	"aiscope/pkg/simple/client/k8s"
 	"context"
@@ -71,7 +73,10 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 }
 
 func (s *APIServer) installAIscopeAPIs() {
-	imOperator := im.NewOperator(s.KubernetesClient.AIScope())
+	imOperator := im.NewOperator(s.KubernetesClient.AIScope(),
+		user.New(s.InformerFactory.AIScopeSharedInformerFactory(), s.InformerFactory.KubernetesSharedInformerFactory()),
+		loginrecord.New(s.InformerFactory.AIScopeSharedInformerFactory()),
+		)
 	epOperator := experiment.New(s.KubernetesClient.AIScope(), s.InformerFactory)
 
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Discovery()))

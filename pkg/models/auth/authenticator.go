@@ -81,7 +81,7 @@ func (u *userGetter) findUser(username string) (*iamv1alpha2.User, error) {
 func (u *userGetter) findMappedUser(idp, uid string) (*iamv1alpha2.User, error) {
 	selector := labels.SelectorFromSet(labels.Set{
 		iamv1alpha2.IdentifyProviderLabel: idp,
-		iamv1alpha2.OriginUIDLabel:        uid,
+		// iamv1alpha2.OriginUIDLabel:        uid,
 	})
 
 	users, err := u.userLister.List(selector)

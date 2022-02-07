@@ -17,9 +17,11 @@ type IdentityManagementInterface interface {
 	DescribeUser(username string) (*iamv1alpha2.User, error)
 }
 
-func NewOperator(aiClient aiscope.Interface) IdentityManagementInterface {
+func NewOperator(aiClient aiscope.Interface, userGetter resources.Interface, loginRecordGetter resources.Interface) IdentityManagementInterface {
 	im := &imOperator{
 		aiClient:          aiClient,
+		userGetter:		   userGetter,
+		loginRecordGetter: loginRecordGetter,
 	}
 	return im
 }
